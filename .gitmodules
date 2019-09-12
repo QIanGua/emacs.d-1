@@ -1,0 +1,3 @@
+[submodule "site-lisp/evil-easymotion"]
+	path = site-lisp/evil-easymotion
+	url = git@github.com:PythonNut/evil-easymotion.git

@@ -27,7 +27,7 @@
                                       comint-mode
                                       gnus-group-mode
                                       gud-mode
-                                      org-mode
+                                      ;; org-mode
                                       vc-git-log-edit-mode
                                       log-edit-mode
                                       term-mode

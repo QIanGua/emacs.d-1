@@ -670,8 +670,11 @@ If the character before and after CH is space or tab, CH is NOT slash"
  "se" 'evil-iedit-state/iedit-mode ; start iedit in emacs
  "sc" 'shell-command
  "ll" 'my-wg-switch-workgroup ; load windows layout
- "kk" 'scroll-other-window
- "jj" 'scroll-other-window-up
+ ;; "kk" 'scroll-other-window
+ ;; "jj" 'scroll-other-window-up
+ ;; "wj" 'scroll-other-window
+ "wj" 'scroll-other-window
+ "wk" 'scroll-other-window-up
  "rt" 'random-color-theme
  "yy" 'hydra-launcher/body
  "gi" 'gist-region ; only workable on my computer
