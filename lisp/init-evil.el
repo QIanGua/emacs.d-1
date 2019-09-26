@@ -774,7 +774,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
  ;;  (eval-after-load 'avy
  ;;   '(progn
  ;;      (set-face-attribute 'avy-lead-face-0 nil :foreground "black")
- ;;      (set-face-attribute 'avy-lead-face-0 nil :background "#f86bf3")))
+ ;;      (set-faatce-attribute 'avy-lead-face-0 nil :background "#f86bf3")))
  ";" 'ace-pinyin-jump-char-2
  "w" 'avy-goto-word-or-subword-1
  "a" 'avy-goto-char-timer

@@ -1,4 +1,4 @@
-* A fast and robust Emacs setup
+ A fast and robust Emacs setup
 - Fast. Only *one second* to start up
 - Robust. Never crash after package upgrade. Packages could be installed without network
 - Support Windows. You can find&grep files on Windows with minimum setup
