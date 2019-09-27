@@ -1353,14 +1353,6 @@ Including indent-buffer, which should not be called automatically on save."
 (add-hook 'nov-mode-hook 'nov-mode-hook-setup)
 ;; }}
 
-(defun line-number-at-position (pos)
-  "Returns the line number for position `POS'."
-  (save-restriction
-    (widen)
-    (save-excursion
-      (goto-char pos)
-      (+ 1 (count-lines (point-min) (line-beginning-position 1))))))
-
 (defun narrow-to-region-indirect-buffer-maybe (start end use-indirect-buffer)
   "Indirect buffer could multiple widen on same file."
   (if (region-active-p) (deactivate-mark))
@@ -1369,8 +1361,8 @@ Including indent-buffer, which should not be called automatically on save."
                             (generate-new-buffer-name
                              (format "%s-indirect-:%s-:%s"
                                      (buffer-name)
-                                     (line-number-at-position start)
-                                     (line-number-at-position end)))
+                                     (line-number-at-pos start)
+                                     (line-number-at-pos end)))
                             'display)
         (narrow-to-region start end)
         (goto-char (point-min)))
@@ -1422,5 +1414,15 @@ If use-indirect-buffer is not nil, use `indirect-buffer' to hold the widen conte
      ;; save the change after wgrep finishes the job
      (setq wgrep-auto-save-buffer t)
      (setq wgrep-too-many-file-length 2024)))
+;; }}
+
+;; {{ edit-server
+(defun edit-server-start-hook-setup ()
+  (when (string-match-p "\\(github\\|zhihu\\).com" (buffer-name))
+    (markdown-mode)))
+(add-hook 'edit-server-start-hook 'edit-server-start-hook-setup)
+(when (require 'edit-server nil t)
+  (setq edit-server-new-frame nil)
+  (edit-server-start))
 ;; }}
 (provide 'init-misc)
