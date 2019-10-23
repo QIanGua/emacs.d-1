@@ -1,3 +1,9 @@
 [submodule "site-lisp/evil-easymotion"]
 	path = site-lisp/evil-easymotion
 	url = git@github.com:PythonNut/evil-easymotion.git
+[submodule "site-lisp/ox-hugo"]
+	path = site-lisp/ox-hugo
+	url = git@github.com:kaushalmodi/ox-hugo.git
+[submodule "site-lisp/org-bullets"]
+	path = site-lisp/org-bullets
+	url = git@github.com:sabof/org-bullets.git
