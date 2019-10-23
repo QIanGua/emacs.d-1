@@ -489,6 +489,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
  "ft" 'counsel-etags-find-tag
  "yy" 'counsel-browse-kill-ring
  "cf" 'counsel-grep ; grep current buffer
+ "rg" 'counsel-rg  ; my personal rg find command
  "gf" 'counsel-git ; find file
  "gg" 'counsel-git-grep-by-selected ; quickest grep should be easy to press
  "gm" 'counsel-git-find-my-file
@@ -678,7 +679,8 @@ If the character before and after CH is space or tab, CH is NOT slash"
  "yy" 'hydra-launcher/body
  "gi" 'gist-region ; only workable on my computer
  "tt" 'my-toggle-indentation
- "ggg" 'magit-status
+ ;; "ggg" 'magit-status
+ "mg" 'magit-status
  "gs" 'magit-show-commit
  "gl" 'magit-log-all
  "gff" 'magit-find-file ; loading file in specific version into buffer
