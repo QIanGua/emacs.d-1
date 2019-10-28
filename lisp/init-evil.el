@@ -502,7 +502,18 @@ If the character before and after CH is space or tab, CH is NOT slash"
                                          (when item
                                            (shell-command-to-string (format "git show %s" (car (split-string item "|" t))))))))))
           (ffip-show-diff 0)))
- "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
+ ;; "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
+ "gd" 'ffip-show-diff ;find-file-in-project 5.3.0+
+ ;; "fd" 'ffip-git-diff-current-file ; ffip-git-diff-current-file
+ "fd" (lambda ()
+        "Run 'git diff version:current-file current-file'."
+        (interactive)
+        (let* ((default-directory (locate-dominating-file default-directory ".git"))
+                (line (ivy-read "diff current file:" (ffip-diff-git-versions))))
+            (ffip-shell-command-to-string (format "git --no-pager diff %s:%s %s"
+                                            (replace-regexp-in-string "^ *\\*? *" "" (car (split-string line "|" t)))
+                                            (file-relative-name buffer-file-name default-directory)
+                                            buffer-file-name))))
  "gl" 'my-git-log-trace-definition ; find history of a function or range
  "sf" 'counsel-git-show-file
  "sh" 'my-select-from-search-text-history
@@ -591,6 +602,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
  "fb" 'flyspell-buffer
  "fe" 'flyspell-goto-next-error
  "fa" 'flyspell-auto-correct-word
+ ;; "fj" 'flyspell-correct-word-before-point ; add to ditionary
  "lb" 'langtool-check-buffer
  "ll" 'langtool-goto-next-error
  "pe" 'flymake-goto-prev-error
