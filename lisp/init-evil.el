@@ -495,7 +495,6 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "ft" 'counsel-etags-find-tag
   "yy" 'counsel-browse-kill-ring
   "cf" 'counsel-grep ; grep current buffer
- "rg" 'counsel-rg  ; my personal rg find command
   "gf" 'counsel-git ; find file
   "gg" 'counsel-git-grep-by-selected ; quickest grep should be easy to press
   "gm" 'counsel-git-find-my-file
@@ -508,18 +507,8 @@ If the character before and after CH is space or tab, CH is NOT slash"
                                           (when item
                                             (shell-command-to-string (format "git show %s" (car (split-string item "|" t))))))))))
            (ffip-show-diff 0)))
- ;; "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
- "gd" 'ffip-show-diff ;find-file-in-project 5.3.0+
- ;; "fd" 'ffip-git-diff-current-file ; ffip-git-diff-current-file
- "fd" (lambda ()
-        "Run 'git diff version:current-file current-file'."
-        (interactive)
-        (let* ((default-directory (locate-dominating-file default-directory ".git"))
-                (line (ivy-read "diff current file:" (ffip-diff-git-versions))))
-            (ffip-shell-command-to-string (format "git --no-pager diff %s:%s %s"
-                                            (replace-regexp-in-string "^ *\\*? *" "" (car (split-string line "|" t)))
-                                            (file-relative-name buffer-file-name default-directory)
-                                            buffer-file-name))))
+  "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
+  "fd" 'ffip-git-diff-current-file ; ffip-git-diff-current-file
   "gl" 'my-git-log-trace-definition ; find history of a function or range
   "sf" 'counsel-git-show-file
   "sh" 'my-select-from-search-text-history
@@ -689,16 +678,13 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "se" 'evil-iedit-state/iedit-mode ; start iedit in emacs
   "sc" 'shell-command
   "ll" 'my-wg-switch-workgroup ; load windows layout
- ;; "kk" 'scroll-other-window
- ;; "jj" 'scroll-other-window-up
- "wj" 'scroll-other-window
- "wk" 'scroll-other-window-up
+  "kk" 'scroll-other-window
+  "jj" 'scroll-other-window-up
   "rt" 'random-color-theme
   "yy" 'hydra-launcher/body
   "gi" 'gist-region ; only workable on my computer
   "tt" 'my-toggle-indentation
- ;; "ggg" 'magit-status
- "mg" 'magit-status
+  "ggg" 'magit-status
   "gs" 'magit-show-commit
   "gl" 'magit-log-all
   "gff" 'magit-find-file ; loading file in specific version into buffer

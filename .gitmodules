@@ -7,3 +7,6 @@
 [submodule "site-lisp/org-bullets"]
 	path = site-lisp/org-bullets
 	url = git@github.com:sabof/org-bullets.git
+[submodule "site-lisp/julia-repl"]
+	path = site-lisp/julia-repl
+	url = git@github.com:tpapp/julia-repl.git
