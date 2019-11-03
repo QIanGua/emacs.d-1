@@ -508,7 +508,6 @@ If the character before and after CH is space or tab, CH is NOT slash"
                                             (shell-command-to-string (format "git show %s" (car (split-string item "|" t))))))))))
            (ffip-show-diff 0)))
   "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
-  "fd" 'ffip-git-diff-current-file ; ffip-git-diff-current-file
   "gl" 'my-git-log-trace-definition ; find history of a function or range
   "sf" 'counsel-git-show-file
   "sh" 'my-select-from-search-text-history
