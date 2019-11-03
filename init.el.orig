@@ -135,8 +135,12 @@
   ;; projectile costs 7% startup time
 
   ;; misc has some crucial tools I need immediately
-  (require-init 'init-misc t)
+<<<<<<< HEAD
+  (require-init 'init-misc)
   (require-init 'init-org-bullets)
+=======
+  (require-init 'init-misc t)
+>>>>>>> 6e31cde158e67445ad10067cfc17f6bd468074c3
 
   (require-init 'init-emacs-w3m t)
   (require-init 'init-hydra t)
