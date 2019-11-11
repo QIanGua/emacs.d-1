@@ -136,7 +136,6 @@
 
   ;; misc has some crucial tools I need immediately
   (require-init 'init-misc t)
-  (require-init 'init-org-bullets)
 
   (require-init 'init-emacs-w3m t)
   (require-init 'init-hydra t)
