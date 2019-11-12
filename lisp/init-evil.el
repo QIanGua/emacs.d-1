@@ -361,7 +361,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
   (let* ((args (ad-get-args 0))
          (c (nth 0 args))
          (pos (or (nth 1 args) (point))))
-    ;; only rememeber global markers
+    ;; only remember global markers
     (when (and (>= c ?A) (<= c ?Z) buffer-file-name)
       (setq evil-global-markers-history
             (delq nil
