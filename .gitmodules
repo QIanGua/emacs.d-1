@@ -13,3 +13,6 @@
 [submodule "site-lisp/liberime"]
 	path = site-lisp/liberime
 	url = git@github.com:merrickluo/liberime.git
+[submodule "site-lisp/make-it-so"]
+	path = site-lisp/make-it-so
+	url = git@github.com:abo-abo/make-it-so.git
