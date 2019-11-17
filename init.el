@@ -42,6 +42,9 @@
                    (*linux* nil)
                    (t nil)))
 
+;; use C-u to page up
+(setq evil-want-C-u-scroll t)
+
 ;; @see https://www.reddit.com/r/emacs/comments/55ork0/is_emacs_251_noticeably_slower_than_245_on_windows/
 ;; Emacs 25 does gc too frequently
 (when *emacs25*
