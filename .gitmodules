@@ -19,3 +19,6 @@
 [submodule "site-lisp/helm-fasd"]
 	path = site-lisp/helm-fasd
 	url = git@github.com:ajsalminen/helm-fasd.git
+[submodule "site-lisp/latex-wrap"]
+	path = site-lisp/latex-wrap
+	url = git@github.com:abo-abo/latex-wrap.git
