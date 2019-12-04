@@ -31,6 +31,12 @@
   :type 'string
   :group 'vc-msg)
 
+(defcustom vc-msg-git-show-commit-function nil
+  "The function to show git commit.  Revision is the parameter of the function.
+It can be set the value like `magit-show-commit'."
+  :type 'function
+  :group 'vc-msg)
+
 (defun vc-msg-git-shell-output (cmd)
   "Generate clean output by running CMD in shell."
   (let* ((default-directory (vc-msg-sdk-git-rootdir)))
@@ -116,14 +122,15 @@ COMMON-OPTS is used to build new blame command."
                                              str
                                              common-opts)))))
 
-(defun vc-msg-git-generate-blame-cmd (file line-num)
-  "Generate git blame command from FILE and LINE-NUM."
+(defun vc-msg-git-generate-blame-cmd (file line-num version)
+  "Generate git blame command from FILE, LINE-NUM and VERSION."
   (let* ((str (vc-msg-sdk-selected-string))
          output
          info
          (common-opts (vc-msg-git-blame-arguments line-num))
-         (cmd (vc-msg-git-generate-cmd (format "%s -- %s"
+         (cmd (vc-msg-git-generate-cmd (format "%s %s -- %s"
                                                common-opts
+                                               version
                                                file))))
     (cond
      ((not str)
@@ -136,14 +143,14 @@ COMMON-OPTS is used to build new blame command."
                                              common-opts)))))
 
 ;;;###autoload
-(defun vc-msg-git-execute (file line-num)
-  "Use FILE and LINE-NUM to produce git command.
+(defun vc-msg-git-execute (file line-num version)
+  "Use FILE, LINE-NUM and VERSION to produce git command.
 Parse the command execution output and return a plist:
 '(:id str :author str :author-time str :summary str)."
   ;; convert full file path to path relative to git directory
   ;; because the command should always be executed in git root.
   (setq file (file-relative-name file (vc-msg-sdk-git-rootdir)))
-  (let* ((cmd (vc-msg-git-generate-blame-cmd file line-num))
+  (let* ((cmd (vc-msg-git-generate-blame-cmd file line-num version))
          (output (vc-msg-git-shell-output cmd)))
 
     ;; I prefer simpler code:
@@ -172,18 +179,22 @@ Parse the command execution output and return a plist:
 (defun vc-msg-git-show-code ()
   "Show code."
   (let* ((info vc-msg-previous-commit-info)
-         (cmd (vc-msg-git-generate-cmd (format "show %s" (plist-get info :id)))))
-    ;; show one commit information
-    (vc-msg-sdk-get-or-create-buffer
-     "vs-msg"
-     (vc-msg-git-shell-output cmd))))
+         (id (plist-get info :id)))
+    (cond
+     (vc-msg-git-show-commit-function
+      (funcall vc-msg-git-show-commit-function id))
+     (t
+      ;; show one commit information
+      (vc-msg-sdk-get-or-create-buffer
+       "vs-msg"
+       (vc-msg-git-shell-output (vc-msg-git-generate-cmd (format "show %s" id))))))))
 
 (defcustom vc-msg-git-extra
   '(("c" "[c]ode" vc-msg-git-show-code))
   "Extra keybindings/commands used by `vc-msg-map'.
 An example:
-'((\"c\" \"[c]ode\" (lambda (message info))
-  (\"d\" \"[d]iff\" (lambda (message info))))"
+'((\"c\" \"[c]ode\" (lambda () (message \"%s\" vc-msg-previous-commit-info))
+  (\"d\" \"[d]iff\" (lambda () (message \"%s\" vc-msg-previous-commit-info))))"
   :type '(repeat sexp)
   :group 'vc-msg)
 

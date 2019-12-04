@@ -6,7 +6,7 @@
 ;; URL: http://github.com/redguardtoo/counsel-etags
 ;; Package-Requires: ((counsel "0.13.0"))
 ;; Keywords: tools, convenience
-;; Version: 1.9.3
+;; Version: 1.9.4
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -171,7 +171,7 @@ Here is code to enable grepping Chinese using pinyinlib,
   :group 'counsel-etags
   :type 'boolean)
 
-(defcustom counsel-etags-find-tag-name-function nil
+(defcustom counsel-etags-find-tag-name-function 'counsel-etags-find-tag-name-default
   "The function to use to find tag name at point.
 It should be a function that takes no arguments and returns an string.
 If it returns nil, the `find-tag-default' is used.
@@ -468,7 +468,7 @@ Return nil if it's not found."
 ;;;###autoload
 (defun counsel-etags-version ()
   "Return version."
-  (message "1.9.3"))
+  (message "1.9.4"))
 
 ;;;###autoload
 (defun counsel-etags-get-hostname ()
@@ -543,7 +543,9 @@ Return nil if it's not found."
 
 (defun counsel-etags-dir-pattern (dir)
   "Trim * from DIR."
-  (replace-regexp-in-string "\\`[*]*" "" (replace-regexp-in-string "[*/]*\\'" "" dir)))
+  (setq dir (replace-regexp-in-string "[*/]*\\'" "" dir))
+  (setq dir (replace-regexp-in-string "\\`[*]*" "" dir))
+  (regexp-quote dir))
 
 
 (defun counsel-etags-emacs-bin-path ()
@@ -564,6 +566,8 @@ Return nil if it's not found."
   (cond
    ;; no options file
    ((or (not counsel-etags-ctags-options-file)
+        ;; ~/.ctags might be missing
+        (not (file-exists-p counsel-etags-ctags-options-file))
         (string= counsel-etags-ctags-options-file ""))
     "")
 
@@ -578,7 +582,7 @@ Return nil if it's not found."
 
    (t
     (format "--options=\"%s\""
-            (file-truename counsel-etags-ctags-options-file)))))
+            (regexp-quote (file-truename counsel-etags-ctags-options-file))))))
 
 (defun counsel-etags-get-scan-command (find-program ctags-program &optional code-file)
   "Create scan command for SHELL from FIND-PROGRAM and CTAGS-PROGRAM.
@@ -953,12 +957,10 @@ So we need *encode* the string."
       (counsel-etags-encode (buffer-substring-no-properties (region-beginning)
                                                             (region-end)))))
 
-(defmacro counsel-etags-tagname-at-point ()
+(defun counsel-etags-tagname-at-point ()
   "Get tag name at point."
-  `(or (counsel-etags-selected-str)
-       (and counsel-etags-find-tag-name-function
-            (funcall counsel-etags-find-tag-name-function))
-       (find-tag-default)))
+  (or (counsel-etags-selected-str)
+      (funcall counsel-etags-find-tag-name-function)))
 
 (defun counsel-etags-forward-line (lnum)
   "Forward LNUM lines."
@@ -1066,6 +1068,11 @@ Focus on TAGNAME if it's not nil."
     ;; the tags file IS touched
     (when tags-file
       (counsel-etags-add-tags-file-to-history tags-file))))
+
+;;;###autoload
+(defun counsel-etags-find-tag-name-default ()
+  "Find tag at point."
+  (find-tag-default))
 
 ;;;###autoload
 (defun counsel-etags-word-at-point (predicate)
@@ -1202,19 +1209,19 @@ CONTEXT is extra information collected before finding tag definition."
   "Create an index alist for the definitions in the current buffer."
   (let* ((ctags-program (or counsel-etags-tags-program
                             (counsel-etags-guess-program "ctags")))
-         (code-file buffer-file-name)
+         (ext (if buffer-file-name (file-name-extension buffer-file-name) ""))
+         ;; ctags needs file extension
+         (code-file (make-temp-file "coet" nil (concat "." ext)))
          (tagname-re (concat "\\([^\177\001\n]+\\)\177\\("
                              "[^\177\001\n]+"
                              "\\)\001\\([0-9]+\\),\\([0-9]+\\)"))
          cmd
          imenu-items
          cands)
-    (unless code-file
-      (setq code-file
-            (make-temp-file (expand-file-name "coet"
-                                              temporary-file-directory))))
 
     (when (and code-file (file-exists-p code-file))
+      ;; write current buffer into code file
+      (write-region (point-min) (point-max) code-file)
       (setq cmd
             (cond
              (counsel-etags-command-to-scan-single-code-file
@@ -1249,7 +1256,8 @@ CONTEXT is extra information collected before finding tag definition."
             (counsel-etags-forward-line (cdr c))
             (search-forward name (point-at-eol))
             (forward-char (- (length name)))
-            (push (cons name (point-marker)) imenu-items)))))
+            (push (cons name (point-marker)) imenu-items))))
+      (delete-file code-file))
     imenu-items))
 
 ;;;###autoload
@@ -1398,19 +1406,19 @@ If SYMBOL-AT-POINT is nil, don't read symbol at point."
     (cond
      ((counsel-etags-has-quick-grep)
       (concat (mapconcat (lambda (e)
-                           (format "-g=\"!%s/*\"" e))
+                           (format "-g=\"!%s/*\"" (shell-quote-argument e)))
                          ignore-dirs " ")
               " "
               (mapconcat (lambda (e)
-                           (format "-g=\"!%s\"" e))
+                           (format "-g=\"!%s\"" (shell-quote-argument e)))
                          ignore-file-names " ")))
      (t
       (concat (mapconcat (lambda (e)
-                           (format "--exclude-dir=\"%s\"" e))
+                           (format "--exclude-dir=\"%s\"" (shell-quote-argument e)))
                          ignore-dirs " ")
               " "
               (mapconcat (lambda (e)
-                           (format "--exclude=\"%s\"" e))
+                           (format "--exclude=\"%s\"" (shell-quote-argument e)))
                          ignore-file-names " "))))))
 
 (defun counsel-etags-grep-cli (keyword use-cache)

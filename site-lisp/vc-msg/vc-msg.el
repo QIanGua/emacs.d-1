@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2017 Chen Bin
 ;;
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; Keywords: git vc svn hg messenger
 ;; Author: Chen Bin <chenbin DOT sh AT gmail DOT com>
 ;; URL: http://github.com/redguardtoo/vc-msg
@@ -47,11 +47,17 @@
 ;;   (add-hook 'vc-msg-hook 'vc-msg-hook-setup)
 ;;
 ;; Hook `vc-msg-show-code-hook' is hook after code of certain commit
-;; is displayed. Here is sample code:
+;; is displayed.  Here is sample code:
 ;;   (defun vc-msg-show-code-setup ()
 ;;     ;; use `ffip-diff-mode' from package find-file-in-project instead of `diff-mode'
 ;;     (ffip-diff-mode))
 ;;   (add-hook 'vc-msg-show-code-hook 'vc-msg-show-code-setup)
+;;
+;; Git users could set `vc-msg-git-show-commit-function' to show the code of commit,
+;;
+;;   (setq vc-msg-git-show-commit-function 'magit-show-commit)
+;;
+;; If `vc-msg-git-show-commit-function' is executed, `vc-msg-show-code-hook' is ignored.
 ;;
 ;; Perforce is detected automatically.  You don't need any manual setup.
 ;; But if you use Windows version of perforce CLI in Cygwin Emacs, we
@@ -82,11 +88,24 @@ A string like 'git' or 'svn' to lookup `vc-msg-plugins'."
   "Copy commit id/hash/changelist into `kill-ring' when `vc-msg-show'."
   :type 'boolean)
 
+(defcustom vc-msg-get-current-file-function 'vc-msg-sdk-get-current-file
+  "Get current file path."
+  :type 'function)
+
+(defcustom vc-msg-get-line-num-function 'line-number-at-pos
+  "Get current line number."
+  :type 'function)
+
+(defcustom vc-msg-get-version-function 'vc-msg-sdk-get-version
+  "Get version of current file/buffer."
+  :type 'function)
+
 (defcustom vc-msg-known-vcs
   '(("p4" . (let* ((output (shell-command-to-string "p4 client -o"))
                    (git-root-dir (vc-msg-sdk-git-rootdir))
                    (root-dir (if (string-match "^Root:[ \t]+\\(.*\\)" output)
-                                 (match-string 1 output))))
+                                 (match-string 1 output)))
+                   (current-file (funcall vc-msg-get-current-file-function)))
               (if git-root-dir (setq git-root-dir
                                      (file-truename (file-name-as-directory git-root-dir))))
 
@@ -94,7 +113,8 @@ A string like 'git' or 'svn' to lookup `vc-msg-plugins'."
                                  (file-truename (file-name-as-directory root-dir))))
               ;; 'p4 client -o' has the parent directory of `buffer-file-name'
               (and root-dir
-                   (string-match-p (format "^%s" root-dir) buffer-file-name)
+                   current-file
+                   (string-match-p (format "^%s" root-dir) current-file)
                    (or (not git-root-dir)
                        ;; use `git-p4', git root same as p4 client root
                        (> (length git-root-dir) (length root-dir))))))
@@ -192,7 +212,7 @@ and is a blackbox to 'vc-msg.el'."
 (defun vc-msg-find-plugin ()
   "Find plugin automatically using `vc-msg-plugins'."
   (let* ((plugin (cl-some (lambda (e)
-                            (if (string= (plist-get e :type) current-vcs-type) e))
+                            (if (string= (plist-get e :type) (vc-msg-detect-vcs-type)) e))
                           vc-msg-plugins)))
     (if plugin
         ;; load the plugin in run time
@@ -274,21 +294,23 @@ If Git is used and some text inside the line is selected,
 the correct commit which submits the selected text is displayed."
   (interactive)
   (let* (finish
-         (current-vcs-type (vc-msg-detect-vcs-type))
-         (plugin (vc-msg-find-plugin)))
+         (plugin (vc-msg-find-plugin))
+         (current-file (funcall vc-msg-get-current-file-function)))
     (if plugin
       (let* ((executer (plist-get plugin :execute))
              (formatter (plist-get plugin :format))
-             (commit-info (funcall executer
-                                   buffer-file-name
-                                   (line-number-at-pos)))
+             (commit-info (and current-file
+                               (funcall executer
+                                        current-file
+                                        (funcall vc-msg-get-line-num-function)
+                                        (funcall vc-msg-get-version-function))))
              message
              (extra-commands (symbol-value (plist-get plugin :extra))))
 
         (vc-msg-update-keymap extra-commands)
 
         (cond
-         ((listp commit-info)
+         ((and commit-info (listp commit-info))
           ;; the message to display
           (setq message (funcall formatter commit-info))
 
@@ -320,7 +342,7 @@ the correct commit which submits the selected text is displayed."
                           t))
                 (popup-delete menu))))
 
-          (run-hook-with-args 'vc-msg-hook current-vcs-type commit-info))
+          (run-hook-with-args 'vc-msg-hook (vc-msg-detect-vcs-type) commit-info))
 
          ((stringp commit-info)
           ;; Failed. Show the reason.
