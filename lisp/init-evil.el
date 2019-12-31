@@ -494,6 +494,29 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
   "gl" 'my-git-log-trace-definition ; find history of a function or range
   "sh" 'my-select-from-search-text-history
+  ;; "rjs" 'run-js
+  ;; "jsr" 'js-send-region
+  ;; "jsb" 'js-clear-send-buffer
+  ;; "kb" 'kill-buffer-and-window ;; "k" is preserved to replace "C-g"
+  ;; "ls" 'highlight-symbol
+  ;; "lq" 'highlight-symbol-query-replace
+  ;; "ln" 'highlight-symbol-nav-mode ; use M-n/M-p to navigation between symbols
+  ;; "ii" 'my-imenu-or-list-tag-in-current-file
+  ;; "ij" 'rimenu-jump
+  ;; "." 'evil-ex
+  ;; ;; @see https://github.com/pidu/git-timemachine
+  ;; ;; p: previous; n: next; w:hash; W:complete hash; g:nth version; q:quit
+  ;; "tg" 'dumb-jump-go
+  ;; "tb" 'dumb-jump-back
+  ;; "tm" 'my-git-timemachine
+  ;; ;; toggle overview,  @see http://emacs.wordpress.com/2007/01/16/quick-and-dirty-code-folding/
+  ;; "ov" 'my-overview-of-current-buffer
+  ;; "oo" '(lambda ()
+  ;;         (interactive)
+  ;;         (cond
+  ;;          ((member major-mode '(octave-mode))
+  ;;           (octave-send-buffer))
+  
   "rjs" 'run-js
   "jsr" 'js-send-region
   "jsb" 'js-clear-send-buffer
@@ -516,7 +539,8 @@ If the character before and after CH is space or tab, CH is NOT slash"
           (cond
            ((member major-mode '(octave-mode))
             (octave-send-buffer))
-           (t
+  
+         (t
             (compile))))
   "c$" 'org-archive-subtree ; `C-c $'
   ;; org-do-demote/org-do-premote support selected region
