@@ -23,7 +23,9 @@
   - [[#quick-start][Quick start]]
   - [[#key-bindings][Key bindings]]
 - [[#faq][FAQ]]
-  - [[#git-blame-current-line][git blame current line]]
+  - [[#locked-packages][Locked packages]]
+  - [[#how-to-install-new-packages][How to install new packages?]]
+  - [[#git-blame-current-line][Git blame current line]]
   - [[#saveload-windows-layout][Save/Load windows layout]]
   - [[#use-this-configuration-as-merge-tool-for-git][Use this configuration as merge tool for Git]]
   - [[#default-terminal-shell][Default terminal shell]]
@@ -44,7 +46,6 @@
   - [[#key-bindings-doesnt-work][Key bindings doesn't work?]]
   - [[#org-mode][Org-mode]]
   - [[#macos-user][macOS user?]]
-  - [[#locked-packages][Locked packages]]
   - [[#customize-global-variables][Customize global variables]]
   - [[#opensave-files-with-counselivy][Open/Save files with Counsel/Ivy]]
   - [[#windows][Windows]]
@@ -66,6 +67,7 @@
   - [[#true-colors-in-terminal-emacs][True colors in terminal Emacs]]
   - [[#run-the-unit-test-before-git-commit][Run the unit test before git commit]]
   - [[#python-environment][Python environment]]
+  - [[#set-up-lsp-mode][Set up lsp-mode]]
 - [[#support-legacy-emacs-versions][Support legacy Emacs versions]]
   - [[#emacs-23][Emacs 23]]
   - [[#emacs-243][Emacs 24.3]]
@@ -291,7 +293,30 @@ Besides, "[[http://blog.binchen.org/posts/how-to-be-extremely-efficient-in-emacs
 
 Press =kj= to escape from =evil-insert-state= and everything else in Emacs. It's much more efficient than =ESC= in Vim or =C-g= in Emacs. Search =evil-escape= in =init-evil.el= for details.
 * FAQ
-** git blame current line
+** Locked packages
+Some packages are so important to my workflow that they are locked.
+
+Those packages are placed at =~/.emacs.d/site-lisp=.
+
+They will not be upgraded by ELPA.emacs.d/site-lisp= at first.
+** How to install new packages?
+I only use two package repositories,
+- [[https://stable.melpa.org]] (holding stable packages)
+- [[https://melpa.org]] (holding latest but unstable packages)
+
+If a package named =MY-PKG= exists in the stable repository, you only need one line setup,
+#+begin_src elisp
+(require-package 'MY-PKG)
+#+end_src
+
+This line could be placed in =~/.emacs.d/lisp/init-elpa.el= or =~/.custom.el=.
+
+You'd better place everything related to =MY-PKG= into =~/.custom.el= so the main stream change won't impact your own configuration.
+
+If the package does not exist in the stable repository, modify =melpa-include-packages= in =~/.emacs.d/lisp/init-elpa.el= first.
+
+I encourage you to read =init-elpa.el= to understand how packages are managed if you are good at Emacs Lisp, 
+** Git blame current line
 Run =vc-msg-show=.
 
 If you select a region inside current line, the *correct commit which submits the selected snippet* is displayed instead of the latest commit touch the whole line.
@@ -307,7 +332,7 @@ Insert below configuration into =~/.gitconfig=,
 cmd = emacs -nw -Q --eval \"(setq startup-now t)\" -l \"~/.emacs.d/init.el\" --eval \"(progn (setq ediff-quit-hook 'kill-emacs) (if (file-readable-p \\\"$BASE\\\") (ediff-merge-files-with-ancestor \\\"$LOCAL\\\" \\\"$REMOTE\\\" \\\"$BASE\\\" nil \\\"$MERGED\\\") (ediff-merge-files \\\"$LOCAL\\\" \\\"$REMOTE\\\" nil \\\"$MERGED\\\")))\"
 #+end_src
 
-Then run =git mergetool -t ediff=  to resolve conflicts.
+Then run =git mergetool -t ediff= to resolve conflicts.
 
 Here is [[https://gist.github.com/redguardtoo/d4ecd51f785bd117a6a0][my ~/.gitconfig]]. You can use [[https://github.com/redguardtoo/test-git-mergetool]] to practice.
 ** Default terminal shell
@@ -450,12 +475,6 @@ Run =M-x org-open-at-point= to open link under cursor. Http link will be opened 
 Please replace legacy Emacs 22 and ctags with the new versions.
 
 The easiest way is change [[https://en.wikipedia.org/wiki/PATH_(variable)][Environment variable PATH]].
-** Locked packages
-Some packages are so important to my workflow that they are locked.
-
-Those packages are placed at =~/.emacs.d/site-lisp=.
-
-They will not be upgraded by ELPA.emacs.d/site-lisp= at first.
 ** Customize global variables
 Some variables are hard coded so you cannot =M-x customize= to modify them.
 
@@ -470,7 +489,7 @@ Keep pressing =C-M-j= to ignore candidates and open/save files using current inp
 
 You can also press =M-o= to apply other action on selected file. See [[https://oremacs.com/2015/07/23/ivy-multiaction/]] for details.
 ** Windows
-I strongly suggest [[http://www.cygwin.com/][Cygwin]] version of Emacs. Native Windows version is fine if it knows how to find the third party command line programs which could be installed through Cygwin. Please add =C:\Cygwin64\bin= to environment variable =PATH= so Emacs can detect the programs automatically.
+I strongly suggest [[http://www.cygwin.com/][Cygwin]] version of Emacs. Native version of Emacs should know how to find third party command line programs from Cygwin. I suggest adding =C:\Cygwin64\bin= to environment variable =PATH= so Emacs can detect the programs automatically.
 
 By default, environment variable =HOME= points to the directory =C:\Users\<username>= on Windows 7+. You need copy the folder =.emacs.d= into that directory. Or you can change =HOME=.
 ** Yasnippet
@@ -528,11 +547,11 @@ For languages GNU Global doesn't support, you can fall back to =company-ctags= a
 
 You can also complete line by =M-x eacl-complete-line= and complete multi-lines statement by =M-x eacl-complete-multiline=.
 ** Chinese Input Method Editor
-Please note pyim is already built into this setup. You don't need install it through ELPA.
+Please note pyim is already built into this setup. You need not install it through ELPA.
 
 Run =M-x toggle-input-method= to toggle input method [[https://github.com/tumashu/pyim][pyim]].
 
-Dictionaries with ".pyim" extension under the directory  =~/.eim/= are automatically loaded.
+Dictionaries with ".pyim" extension under the directory =~/.eim/= are automatically loaded.
 
 Please =curl -L http://tumashu.github.io/pyim-bigdict/pyim-bigdict.pyim.gz | zcat > ~/.eim/pyim-bigdict.pyim= to install dictionary for pyim. 
 ** Install multiple versions of Emacs
@@ -583,9 +602,32 @@ If elpy warns you that the python environment is corrupt, you have two solutions
 
 Solution 1, ignore the warning and turn off elpy by comment out =(elpy-enable)= in =init-python.el=. Then you won't have those python IDE things.
 
-Solution 2, fix your python environment. For example, if elpy gives the the error message =ImportError: No module named pkg_resources= on Ubuntu, a quick search will lead to [[https://askubuntu.com/questions/1006201/importerror-no-module-named-pkg-resources][this link.]] So a simple shell command =sudo apt install --reinstall python-pkg-resources python-setuptools= solves the problem.
+Solution 2, fix your python environment. For example, if elpy gives the error message =ImportError: No module named pkg_resources= on Ubuntu, a quick search will lead to [[https://askubuntu.com/questions/1006201/importerror-no-module-named-pkg-resources][this link.]] So a simple shell command =sudo apt install --reinstall python-pkg-resources python-setuptools= solves the problem.
 
-Solution 2 might be better because you couldn't do any serious coding anyway if the python environment is broken, .
+Solution 2 might be better because you couldn't do any serious coding anyway if the python environment is broken.
+** Set up [[https://github.com/emacs-lsp/lsp-mode][lsp-mode]]
+You could insert below code into =~/.custom.el=,
+#+begin_src elisp
+(eval-after-load 'lsp-mode
+  '(progn
+     ;; enable log only for debug
+     (setq lsp-log-io nil)
+     ;; use `evil-matchit' instead
+     (setq lsp-enable-folding nil)
+     ;; handle yasnippet by myself
+     (setq lsp-enable-snippet nil)
+     ;; use `company-ctags' only.
+     ;; Please `company-lsp' is automatically enabled if installed
+     (setq lsp-enable-completion-at-point nil)
+     ;; turn off for better performance
+     (setq lsp-enable-symbol-highlighting nil)
+     ;; use ffip instead
+     (setq lsp-enable-links nil)
+     ;; don't scan 3rd party javascript libraries
+     (push "[/\\\\]\\node_modules$" lsp-file-watch-ignored)))
+#+end_src
+
+Then run `M-x lsp` to start lsp client and server. Check [[https://github.com/emacs-lsp/lsp-mode]] on how to install lsp server.
 * Support legacy Emacs versions
 ** Emacs 23
 Version 1.2 of this setup is the last version to support Emacs v23.
@@ -606,7 +648,6 @@ Please use [[https://github.com/redguardtoo/emacs.d/archive/2.9.zip]] and [[http
 - Never turn off any bundled mode if it's on by default. Future version of Emacs may assume it's on. Tweak its flag in mode hook instead!
 - Git skills are *extremely useful*. Please read the chapters "Git Basics", "Git Branching", "Git Tools" from [[https://git-scm.com/book/en/][Pro Git]]
 - You can run =optimize-emacs-startup= to compile "*.el" under =~/.emacs.d/lisp/=
-- Run =emacs --no-splash --eval "(setq startup-now t)" -l "$HOME/.emacs.d/init.el"= to start up Emacs as fast as possible. But it has less features
 * Report bug
 - Please check [[http://www.emacswiki.org/emacs/][EmacsWiki]] and my FAQ at first
 - If you still can't resolve the issue, restart Emacs with option =---debug-init=, run =M-x toggle-debug-on-error= in Emacs. Try to reproduce the issue

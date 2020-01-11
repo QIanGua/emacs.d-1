@@ -489,34 +489,10 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "yy" 'counsel-browse-kill-ring
   "cf" 'counsel-grep ; grep current buffer
   "gf" 'counsel-git ; find file
-  "gg" 'counsel-git-grep-by-selected ; quickest grep should be easy to press
-  "gm" 'counsel-git-find-my-file
+  "gg" 'my-counsel-git-grep ; quickest grep should be easy to press
   "gd" 'ffip-show-diff-by-description ;find-file-in-project 5.3.0+
   "gl" 'my-git-log-trace-definition ; find history of a function or range
   "sh" 'my-select-from-search-text-history
-  ;; "rjs" 'run-js
-  ;; "jsr" 'js-send-region
-  ;; "jsb" 'js-clear-send-buffer
-  ;; "kb" 'kill-buffer-and-window ;; "k" is preserved to replace "C-g"
-  ;; "ls" 'highlight-symbol
-  ;; "lq" 'highlight-symbol-query-replace
-  ;; "ln" 'highlight-symbol-nav-mode ; use M-n/M-p to navigation between symbols
-  ;; "ii" 'my-imenu-or-list-tag-in-current-file
-  ;; "ij" 'rimenu-jump
-  ;; "." 'evil-ex
-  ;; ;; @see https://github.com/pidu/git-timemachine
-  ;; ;; p: previous; n: next; w:hash; W:complete hash; g:nth version; q:quit
-  ;; "tg" 'dumb-jump-go
-  ;; "tb" 'dumb-jump-back
-  ;; "tm" 'my-git-timemachine
-  ;; ;; toggle overview,  @see http://emacs.wordpress.com/2007/01/16/quick-and-dirty-code-folding/
-  ;; "ov" 'my-overview-of-current-buffer
-  ;; "oo" '(lambda ()
-  ;;         (interactive)
-  ;;         (cond
-  ;;          ((member major-mode '(octave-mode))
-  ;;           (octave-send-buffer))
-  
   "rjs" 'run-js
   "jsr" 'js-send-region
   "jsb" 'js-clear-send-buffer
@@ -534,14 +510,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "tm" 'my-git-timemachine
   ;; toggle overview,  @see http://emacs.wordpress.com/2007/01/16/quick-and-dirty-code-folding/
   "ov" 'my-overview-of-current-buffer
-  "oo" '(lambda ()
-          (interactive)
-          (cond
-           ((member major-mode '(octave-mode))
-            (octave-send-buffer))
-  
-         (t
-            (compile))))
+  "oo" 'compile
   "c$" 'org-archive-subtree ; `C-c $'
   ;; org-do-demote/org-do-premote support selected region
   "c<" 'org-do-promote ; `C-c C-<'
@@ -593,7 +562,6 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "fb" 'flyspell-buffer
   "fe" 'flyspell-goto-next-error
   "fa" 'flyspell-auto-correct-word
- ;; "fj" 'flyspell-correct-word-before-point ; add to ditionary
   "lb" 'langtool-check-buffer
   "ll" 'langtool-goto-next-error
   "pe" 'flymake-goto-prev-error
@@ -630,8 +598,8 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "xh" 'mark-whole-buffer
   "xk" 'kill-buffer
   "xs" 'save-buffer
-  "xc" 'my-switch-to-shell-or-ansi-term
-  "xz" 'my-switch-to-shell-or-ansi-term
+  "xc" 'my-switch-to-shell
+  "xz" 'my-switch-to-shell
   "vf" 'vc-rename-file-and-buffer
   "vc" 'vc-copy-file-and-rename-buffer
   "xv" 'vc-next-action ; 'C-x v v' in original
@@ -755,7 +723,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
  ;;  (eval-after-load 'avy
  ;;   '(progn
  ;;      (set-face-attribute 'avy-lead-face-0 nil :foreground "black")
- ;;      (set-faatce-attribute 'avy-lead-face-0 nil :background "#f86bf3")))
+ ;;      (set-face-attribute 'avy-lead-face-0 nil :background "#f86bf3")))
  ";" 'ace-pinyin-jump-char-2
  "w" 'avy-goto-word-or-subword-1
  "a" 'avy-goto-char-timer
@@ -905,12 +873,12 @@ If the character before and after CH is space or tab, CH is NOT slash"
 ;; }}
 
 
-(defun my-switch-to-shell-or-ansi-term ()
-  "Switch to shell or terminal."
+(defun my-switch-to-shell ()
+  "Switch to built in or 3rd party shell."
   (interactive)
   (cond
-   ((fboundp 'switch-to-shell-or-ansi-term)
-    (switch-to-shell-or-ansi-term))
+   ((display-graphic-p)
+    (switch-to-builtin-shell))
    (t
     (suspend-frame))))
 

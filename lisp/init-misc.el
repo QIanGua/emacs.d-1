@@ -206,6 +206,8 @@ This function can be re-used by other major modes after compilation."
     (when (should-use-minimum-resource)
       (font-lock-mode -1)))
 
+  (company-ispell-setup)
+
   (unless (is-buffer-file-temp)
 
     ;; {{ spell check camel-case word
@@ -787,9 +789,11 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 
 ;; {{ eacl - emacs auto complete line(s)
 (global-set-key (kbd "C-x C-l") 'eacl-complete-line)
-(global-set-key (kbd "C-c ;") 'eacl-complete-statement)
-(global-set-key (kbd "C-c C-]") 'eacl-complete-snippet)
-(global-set-key (kbd "C-c .") 'eacl-complete-tag)
+(global-set-key (kbd "C-c ;") 'eacl-complete-multiline)
+(eval-after-load 'eacl
+  '(progn
+     ;; not interested in untracked files in git repository
+     (setq eacl-git-grep-untracked nil)))
 ;; }}
 
 ;; {{
@@ -872,6 +876,12 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 
 (eval-after-load 'compile
   '(progn
+     (defadvice compile (around compile-hack activate)
+       (cond
+        ((member major-mode '(octave-mode))
+         (octave-send-buffer))
+        (t
+         ad-do-it)))
      (add-to-list 'compilation-error-regexp-alist-alist
                   (list 'mocha "at [^()]+ (\\([^:]+\\):\\([^:]+\\):\\([^:]+\\))" 1 2 3))
      (add-to-list 'compilation-error-regexp-alist 'mocha)))
@@ -910,18 +920,23 @@ When join-dark-side is t, pick up dark theme only."
          (hour (string-to-number (format-time-string "%H" (current-time))))
          (prefer-light-p (and (not join-dark-side) (>= hour 9) (<= hour 19)) ))
     (dolist (theme (custom-available-themes))
-      (let* ((light-theme-p (string-match-p "-light" (symbol-name theme))))
+      (let* ((light-theme-p (or (string-match-p "-light" (symbol-name theme))
+                                (member theme '(leuven)))))
         (when (if prefer-light-p light-theme-p (not light-theme-p))
           (push theme themes))))
   (pickup-random-color-theme themes)))
 
-(defun switch-to-ansi-term ()
+(defun switch-to-builtin-shell ()
+  "Switch to builtin shell.
+If the shell is already opend in some buffer, open that buffer."
   (interactive)
   (let* ((buf-name (if *win64* "*shell*" "*ansi-term"))
          (buf (get-buffer buf-name))
          (wins (window-list))
          current-frame-p)
+
     (cond
+     ;; A shell buffer is already opened
      ((buffer-live-p buf)
       (dolist (win wins)
         (when (string= (buffer-name (window-buffer win)) buf-name)
@@ -930,16 +945,12 @@ When join-dark-side is t, pick up dark theme only."
             (select-window win))))
       (unless current-frame-p
         (switch-to-buffer buf)))
+     ;; Windows
      (*win64*
       (shell))
+     ;; Linux
      (t
       (ansi-term my-term-program)))))
-
-(defun switch-to-shell-or-ansi-term ()
-  "Switch to shell or terminal."
-  (interactive)
-  (if (display-graphic-p) (switch-to-ansi-term)
-    (suspend-frame)))
 
 ;; {{ emms
 (eval-after-load 'emms
@@ -949,14 +960,9 @@ When join-dark-side is t, pick up dark theme only."
                               emms-player-mplayer
                               emms-player-mpg321
                               emms-player-ogg123
-                              lemms-player-vlc
+                              emms-player-vlc
                               emms-player-vlc-playlist))))
 ;; }}
-
-;; @see https://www.reddit.com/r/emacs/comments/988paa/emacs_on_windows_seems_lagging/
-(unless *no-memory*
-  ;; speed up font rendering for special characters
-  (setq inhibit-compacting-font-caches t))
 
 (add-auto-mode 'texile-mode "\\.textile\\'")
 
