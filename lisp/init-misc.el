@@ -88,6 +88,11 @@
 ;; {{ find-file-in-project (ffip)
 (eval-after-load 'find-file-in-project
   '(progn
+     (defun my-search-git-reflog-code ()
+       (let* ((default-directory (locate-dominating-file default-directory ".git")))
+         (ffip-shell-command-to-string (format "git --no-pager reflog --date=short -S\"%s\" -p"
+                                               (read-string "Regex: ")))))
+     (push 'my-search-git-reflog-code ffip-diff-backends)
      (setq ffip-match-path-instead-of-filename t)))
 
 (defun neotree-project-dir ()
@@ -211,7 +216,7 @@ This function can be re-used by other major modes after compilation."
   (unless (is-buffer-file-temp)
 
     ;; {{ spell check camel-case word
-    (unless (featurep 'wucuo) (local-require 'wucuo))
+    (my-ensure 'wucuo)
     (wucuo-start t)
     ;; }}
 
@@ -353,7 +358,7 @@ This function can be re-used by other major modes after compilation."
 (defun my-which-function ()
   "Return current function name."
 
-  (unless (featurep 'imenu) (require 'imenu))
+  (my-ensure 'imenu)
   ;; @see http://stackoverflow.com/questions/13426564/how-to-force-a-rescan-in-imenu-by-a-function
   (let* ((imenu-create-index-function (if (my-use-tags-as-imenu-function-p)
                                           'counsel-etags-imenu-default-create-index-function
@@ -781,7 +786,7 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 
 (defun vc-msg-show-code-setup ()
   "Use `ffip-diff-mode' instead of `diff-mode'."
-  (unless (featurep 'find-file-in-project) (require 'find-file-in-project))
+  (my-ensure 'find-file-in-project)
   (ffip-diff-mode))
 
 (add-hook 'vc-msg-show-code-hook 'vc-msg-show-code-setup)
@@ -886,49 +891,9 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
                   (list 'mocha "at [^()]+ (\\([^:]+\\):\\([^:]+\\):\\([^:]+\\))" 1 2 3))
      (add-to-list 'compilation-error-regexp-alist 'mocha)))
 
-(defun pickup-random-color-theme (themes)
-  "Pickup random color theme from themes."
-  (unless (featurep 'counsel) (require 'counsel))
-  (let* ((available-themes (mapcar 'symbol-name themes))
-         (theme (nth (random (length available-themes)) available-themes)))
-    (counsel-load-theme-action theme)
-    (message "Color theme [%s] loaded." theme)))
-
-;; ;; useless and hard to debug
-;; (defun optimize-emacs-startup ()
-;;   "Speedup emacs startup by compiling."
-;;   (interactive)
-;;   (let* ((dir (file-truename "~/.emacs.d/lisp/"))
-;;          (files (directory-files dir)))
-;;     (load (file-truename "~/.emacs.d/init.el"))
-;;     (dolist (f files)
-;;       (when (string-match-p ".*\.el$" f)
-;;         (let* ((default-directory dir))
-;;           (byte-compile-file (file-truename f) t))))))
-
-;; random color theme
-(defun random-color-theme ()
-  "Random color theme."
-  (interactive)
-  (pickup-random-color-theme (custom-available-themes)))
-
-(defun random-healthy-color-theme (join-dark-side)
-  "Random healthy color theme.
-When join-dark-side is t, pick up dark theme only."
-  (interactive "P")
-  (let* (themes
-         (hour (string-to-number (format-time-string "%H" (current-time))))
-         (prefer-light-p (and (not join-dark-side) (>= hour 9) (<= hour 19)) ))
-    (dolist (theme (custom-available-themes))
-      (let* ((light-theme-p (or (string-match-p "-light" (symbol-name theme))
-                                (member theme '(leuven)))))
-        (when (if prefer-light-p light-theme-p (not light-theme-p))
-          (push theme themes))))
-  (pickup-random-color-theme themes)))
-
 (defun switch-to-builtin-shell ()
   "Switch to builtin shell.
-If the shell is already opend in some buffer, open that buffer."
+If the shell is already opened in some buffer, switch to that buffer."
   (interactive)
   (let* ((buf-name (if *win64* "*shell*" "*ansi-term"))
          (buf (get-buffer buf-name))
@@ -1174,13 +1139,6 @@ version control automatically."
 
 (add-auto-mode 'tcl-mode "Portfile\\'")
 
-;; someone mentioned that blink cursor could slow Emacs24.4
-;; I couldn't care less about cursor, so turn it off explicitly
-;; https://github.com/redguardtoo/emacs.d/issues/208
-;; but somebody mentioned that blink cursor is needed in dark theme
-;; so it should not be turned off by default
-;; (blink-cursor-mode -1)
-
 (defun create-scratch-buffer ()
   "Create a new scratch buffer."
   (interactive)
@@ -1239,12 +1197,10 @@ Including indent-buffer, which should not be called automatically on save."
 ;; {{ pomodoro
 (eval-after-load 'pomodoro
   '(progn
+     (setq pomodoro-play-sounds nil) ; *.wav is not installed
      (setq pomodoro-break-time 2)
      (setq pomodoro-long-break-time 5)
-     (setq pomodoro-work-time 15)
-     (setq-default mode-line-format
-              (cons '(pomodoro-mode-line-string pomodoro-mode-line-string)
-                    mode-line-format))))
+     (setq pomodoro-work-time 15)))
 
 (unless (featurep 'pomodoro)
   (require 'pomodoro)
@@ -1254,7 +1210,7 @@ Including indent-buffer, which should not be called automatically on save."
 ;; {{ pronunciation
 (defun my-pronounce-word (&optional word)
   (interactive "sWord: ")
-  (unless (featurep 'url) (require 'url))
+  (my-ensure 'url)
   (if word (setq word (downcase word)))
   (let* ((url (format "https://dictionary.cambridge.org/pronunciation/english/%s" word))
          (cached-mp3 (file-truename (format "~/.emacs.d/misc/%s.mp3" word)))
@@ -1339,5 +1295,13 @@ Including indent-buffer, which should not be called automatically on save."
 (setq which-key-separator ":")
 (which-key-mode 1)
 ;; }}
+
+;; {{ eldoc
+(eval-after-load 'eldoc
+  '(progn
+     ;; multi-line message should not display too soon
+     (setq eldoc-idle-delay 1)
+     (setq eldoc-echo-area-use-multiline-p t)))
+;;}}
 
 (provide 'init-misc)
