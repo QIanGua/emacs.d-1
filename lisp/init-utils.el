@@ -59,6 +59,10 @@
   (dolist (pattern patterns)
     (add-to-list 'auto-mode-alist (cons pattern mode))))
 
+(defun add-interpreter-mode (mode &rest patterns)
+  "Add entries to `interpreter-mode-alist' to use `MODE' for all given file `PATTERNS'."
+  (dolist (pattern patterns)
+    (add-to-list 'interpreter-mode-alist (cons pattern mode))))
 
 (defun font-belongs-to (pos fonts)
   "Current font at POS belongs to FONTS."
@@ -118,6 +122,11 @@ If N is nil, use `ivy-mode' to browse `kill-ring'."
                (mapcar #'my-prepare-candidate-fit-into-screen candidates)
                :action fn)))
 
+(defun my-delete-selected-region ()
+  "Delete selected region."
+  (when (region-active-p)
+    (delete-region (region-beginning) (region-end))))
+
 (defun my-insert-str (str)
   "Insert STR into current buffer."
   ;; ivy8 or ivy9
@@ -130,8 +139,7 @@ If N is nil, use `ivy-mode' to browse `kill-ring'."
            (not (eobp)))
       (forward-char))
 
-  ;; delete selected text before paste
-  (if (region-active-p) (delete-region (region-beginning) (region-end)))
+  (my-delete-selected-region)
 
   ;; insert now
   (insert str)

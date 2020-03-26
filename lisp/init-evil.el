@@ -5,6 +5,10 @@
 ;; enable evil-mode
 (evil-mode 1)
 
+;; @see https://github.com/syl20bnr/evil-iedit-state#key-bindings
+;; Don't know why it's not loaded if placed in elpa
+(local-require 'evil-iedit-state)
+
 (defvar my-use-m-for-matchit nil
   "If t, use \"m\" key for `evil-matchit-mode'.
 And \"%\" key is also retored to `evil-jump-item'.")
@@ -305,7 +309,8 @@ If the character before and after CH is space or tab, CH is NOT slash"
     (forward-line 1)
     (evil-search search t t (point))))
 
-;; the original "gd" or `evil-goto-definition' now try `imenu', `xref', search string to `point-min'
+;; "gd" or `evil-goto-definition' now use `imenu', `xref' first,
+;; BEFORE searching string from `point-min'.
 ;; xref part is annoying because I already use `counsel-etags' to search tag.
 (evil-define-motion my-evil-goto-definition ()
   "Go to definition or first occurrence of symbol under point in current buffer."
@@ -434,7 +439,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "bb" (lambda () (interactive) (switch-to-buffer nil)) ; to previous buffer
   "ef" 'end-of-defun
   "m" 'evil-set-marker
-  "em" 'erase-message-buffer
+  "em" 'erase-visible-buffer
   "eb" 'eval-buffer
   "sd" 'sudo-edit
   "sc" 'scratch
@@ -629,7 +634,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "xc" 'save-buffers-kill-terminal ; not used frequently
   "cc" 'my-dired-redo-last-command
   "ss" 'wg-create-workgroup ; save windows layout
-  "se" 'evil-iedit-state/iedit-mode ; start iedit in emacs
+  "rr" 'evil-iedit-state/iedit-mode ; start iedit in emacs to rename variables in defun
   "sc" 'shell-command
   "ll" 'my-wg-switch-workgroup ; load windows layout
   "kk" 'scroll-other-window
@@ -773,6 +778,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
 
 ;; {{ evil-nerd-commenter
 (evilnc-default-hotkeys t)
+(define-key evil-motion-state-map "gc" 'evilnc-comment-operator) ; same as doom-emacs
 
 (defun my-current-line-html-p (paragraph-region)
   (let* ((line (buffer-substring-no-properties (line-beginning-position)
@@ -867,6 +873,13 @@ If the character before and after CH is space or tab, CH is NOT slash"
 (define-key evil-normal-state-map "K" 'evil-jump-out-args)
 ;; }}
 
+;; In insert mode, press "fg" in 0.3 second to trigger my-counsel-company
+;; Run "grep fg ~/.emacs.d/misc/english-words.txt", got "afghan".
+;; "afgan" is rarely used when programming
+(general-imap "f"
+  (general-key-dispatch 'self-insert-command
+    :timeout 0.3
+    "g" 'my-counsel-company))
 
 (defun my-switch-to-shell ()
   "Switch to built in or 3rd party shell."
@@ -888,6 +901,9 @@ If the character before and after CH is space or tab, CH is NOT slash"
      ;; @see https://bitbucket.org/lyro/evil/issue/360/possible-evil-search-symbol-forward
      ;; evil 1.0.8 search word instead of symbol
      (setq evil-symbol-word-search t)
+
+     ;; don't add replaced text to `kill-ring'
+     (setq evil-kill-on-visual-paste nil)
 
      ;; @see https://emacs.stackexchange.com/questions/9583/how-to-treat-underscore-as-part-of-the-word
      ;; uncomment below line to make "dw" has exact same behaviour in evil as as in vim

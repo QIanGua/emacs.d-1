@@ -20,6 +20,7 @@
     git-timemachine ; stable version is broken when git rename file
     evil-textobj-syntax
     command-log-mode
+    lsp-mode ; stable version has performance issue
     edit-server ; use Emacs to edit textarea in browser, need browser addon
     vimrc-mode
     rjsx-mode ; fixed the indent issue in jsx
@@ -78,14 +79,13 @@
     ;; }}
     slime
     groovy-mode
-    ;; company ; I won't wait another 2 years for stable
+    company ; I won't wait another 2 years for stable
     simple-httpd
     dsvn
     findr
     mwe-log-commands
     noflet
     db
-    package-lint
     creole
     web
     buffer-move
@@ -239,7 +239,9 @@ PACKAGE is a symbol, VERSION is a vector as produced by `version-to-list', and
 (require-package 'workgroups2)
 (require-package 'yaml-mode)
 (require-package 'paredit)
+(require-package 'xr) ; required by pyim
 (require-package 'findr)
+(require-package 'diredfl) ; font lock for `dired-mode'
 (require-package 'pinyinlib)
 (require-package 'find-by-pinyin-dired)
 (require-package 'jump)
@@ -310,7 +312,6 @@ PACKAGE is a symbol, VERSION is a vector as produced by `version-to-list', and
 (require-package 'web-mode)
 (require-package 'dumb-jump)
 (require-package 'emms)
-(require-package 'package-lint) ; lint package before submit it to MELPA
 (require-package 'iedit)
 (require-package 'bash-completion)
 (require-package 'websocket) ; for debug debugging of browsers
@@ -320,7 +321,6 @@ PACKAGE is a symbol, VERSION is a vector as produced by `version-to-list', and
 (require-package 'evil-escape)
 (require-package 'evil-exchange)
 (require-package 'evil-find-char-pinyin)
-(require-package 'evil-iedit-state)
 (require-package 'evil-mark-replace)
 (require-package 'evil-matchit)
 (require-package 'evil-nerd-commenter)
@@ -348,6 +348,7 @@ PACKAGE is a symbol, VERSION is a vector as produced by `version-to-list', and
 (require-package 'benchmark-init)
 (require-package 'langtool) ; check grammer
 (require-package 'typescript-mode)
+(require-package 'edit-server)
 
 ;; {{ Fixed expiring GNU ELPA keys
 ;; GNU ELPA GPG key will expire on Sep-2019. So we need install this package to
