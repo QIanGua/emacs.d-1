@@ -18,7 +18,7 @@
 ;; (defun my-setup-develop-environment ()
 ;;   (interactive)
 ;;   (cond
-;;    ((string-match-p (file-truename "~/.emacs.d") (file-name-directory (buffer-file-name))
+;;    ((string-match-p (file-truename my-emacs-d) (file-name-directory (buffer-file-name))
 ;;     (setq vc-handled-backends '(Git)))
 ;;    (t (setq vc-handled-backends nil)))))
 ;; (add-hook 'java-mode-hook 'my-setup-develop-environment)
@@ -295,7 +295,7 @@ If nothing is selected, use the word under cursor as function name to look up."
       (my-ensure 'find-file-in-project)
       (ffip-show-content-in-diff-mode (shell-command-to-string cmd)))))
 
-(with-eval-after-load "vc-msg-git"
+(with-eval-after-load 'vc-msg-git
   ;; open file of certain revision
   (push '("m" "[m]agit-find-file"
           (lambda ()

@@ -15,6 +15,14 @@
 (global-set-key (kbd "C-q") #'aya-open-line)
 ;; }}
 
+;; {{ `sh-mode' setup
+(defun sh-mode-hook-setup ()
+  (when (and *emacs26* (executable-find "shellcheck"))
+    (flymake-shellcheck-load)
+    (flymake-mode 1)))
+(add-hook 'sh-mode-hook 'sh-mode-hook-setup)
+;; }}
+
 ;; {{ ace-link
 (ace-link-setup-default)
 (global-set-key (kbd "M-o") 'ace-link)
@@ -65,7 +73,7 @@
   (setq-default save-place t)))
 
 ;; {{ find-file-in-project (ffip)
-(with-eval-after-load "find-file-in-project"
+(with-eval-after-load 'find-file-in-project
   (defun my-search-git-reflog-code ()
     (let* ((default-directory (locate-dominating-file default-directory ".git")))
       (ffip-shell-command-to-string (format "git --no-pager reflog --date=short -S\"%s\" -p"
@@ -104,24 +112,14 @@
 ;; }}
 
 ;; {{ bookmark
-;; use my own bmk if it exists
-(if (file-exists-p (file-truename "~/.emacs.bmk"))
-    (setq bookmark-file (file-truename "~/.emacs.bmk")))
+;; use my own bookmark if it exists
+(with-eval-after-load 'bookmark
+  (if (file-exists-p (file-truename "~/.emacs.bmk"))
+      (setq bookmark-file (file-truename "~/.emacs.bmk"))))
 ;; }}
 
-(defun insert-lorem ()
-  (interactive)
-  (insert "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque sem mauris, aliquam vel interdum in, faucibus non libero. Asunt in anim uis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in anim id est laborum. Allamco laboris nisi ut aliquip ex ea commodo consequat."))
-
-(defun my-gud-gdb ()
-  (interactive)
-  (gud-gdb (concat "gdb --fullname \"" (cppcm-get-exe-path-current-buffer) "\"")))
-
-(defun my-overview-of-current-buffer ()
-  (interactive)
-  (set-selective-display (if selective-display nil 1)))
-
 (defun lookup-doc-in-man ()
+  "Read man by querying keyword at point."
   (interactive)
   (man (concat "-k " (my-use-selected-string-or-ask))))
 
@@ -130,7 +128,7 @@
 (setq minibuffer-prompt-properties (quote (read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)))
 
 ;; {{ comint-mode
-(with-eval-after-load "comint"
+(with-eval-after-load 'comint
   ;; Don't echo passwords when communicating with interactive programs:
   ;; Github prompt is like "Password for 'https://user@github.com/':"
   (setq comint-password-prompt-regexp
@@ -147,8 +145,8 @@
 (global-set-key (kbd "M-x") 'counsel-M-x)
 (global-set-key (kbd "C-x C-m") 'counsel-M-x)
 
-(defvar my-do-bury-compliation-buffer t
-  "Hide comliation buffer if compile successfully.")
+(defvar my-do-bury-compilation-buffer t
+  "Hide compilation buffer if compile successfully.")
 
 (defun compilation-finish-hide-buffer-on-success (buffer str)
   "Bury BUFFER whose name marches STR.
@@ -157,7 +155,7 @@ This function can be re-used by other major modes after compilation."
       ;;there were errors
       (message "compilation errors, press C-x ` to visit")
     ;;no errors, make the compilation window go away in 0.5 seconds
-    (when (and my-do-bury-compliation-buffer
+    (when (and my-do-bury-compilation-buffer
                (buffer-name buffer)
                (string-match "*compilation*" (buffer-name buffer)))
       ;; @see http://emacswiki.org/emacs/ModeCompile#toc2
@@ -240,7 +238,7 @@ This function can be re-used by other major modes after compilation."
 (global-set-key (kbd "C-h C-f") 'find-function)
 
 ;; {{ time format
-;; If you want to customize time format, read documantation of `format-time-string'
+;; If you want to customize time format, read document of `format-time-string'
 ;; and customize `display-time-format'.
 ;; (setq display-time-format "%a %b %e")
 
@@ -264,7 +262,7 @@ This function can be re-used by other major modes after compilation."
   (shell-command "periscope.py -l en *.mkv *.mp4 *.avi &"))
 
 ;; {{ show email sent by `git send-email' in gnus
-(with-eval-after-load "gnus"
+(with-eval-after-load 'gnus
   (local-require 'gnus-article-treat-patch)
   (setq gnus-article-patch-conditions
         '( "^@@ -[0-9]+,[0-9]+ \\+[0-9]+,[0-9]+ @@" )))
@@ -308,7 +306,6 @@ This function can be re-used by other major modes after compilation."
                         "\\.sub$"
                         "\\.srt$"
                         "\\.ass$"
-                        ;; ~/.emacs.d/**/*.el included
                         ;; "/home/[a-z]\+/\\.[a-df-z]" ; configuration file should not be excluded
                         ))
 ;; }}
@@ -371,13 +368,13 @@ This function can be re-used by other major modes after compilation."
 ;; {{ avy, jump between texts, like easymotion in vim
 ;; @see http://emacsredux.com/blog/2015/07/19/ace-jump-mode-is-dead-long-live-avy/ for more tips
 ;; dired
-(with-eval-after-load "dired"
+(with-eval-after-load 'dired
   (diredfl-global-mode 1)
   (define-key dired-mode-map (kbd ";") 'avy-goto-subword-1))
 ;; }}
 
 ;; {{start dictionary lookup
-;; use below commands to create dicitonary
+;; use below commands to create dictionary
 ;; mkdir -p ~/.stardict/dic
 ;; # wordnet English => English
 ;; curl http://abloz.com/huzheng/stardict-dic/dict.org/stardict-dictd_www.dict.org_wn-2.4.2.tar.bz2 | tar jx -C ~/.stardict/dic
@@ -487,11 +484,6 @@ If step is -1, go backward."
     (setq rlt (list b e))
     rlt))
 
-;; {{ diff region SDK
-(defun diff-region-exit-from-certain-buffer (buffer-name)
-  (bury-buffer buffer-name)
-  (winner-undo))
-
 (defmacro diff-region-open-diff-output (content buffer-name)
   `(let ((rlt-buf (get-buffer-create ,buffer-name)))
     (save-current-buffer
@@ -501,19 +493,7 @@ If step is -1, go backward."
       (insert ,content)
       ;; `ffip-diff-mode' is more powerful than `diff-mode'
       (ffip-diff-mode)
-      (goto-char (point-min))
-      ;; Evil keybinding
-      (if (fboundp 'evil-local-set-key)
-          (evil-local-set-key 'normal "q"
-                              (lambda ()
-                                (interactive)
-                                (diff-region-exit-from-certain-buffer ,buffer-name))))
-      ;; Emacs key binding
-      (local-set-key (kbd "C-c C-c")
-                     (lambda ()
-                       (interactive)
-                       (diff-region-exit-from-certain-buffer ,buffer-name))))))
-;; }}
+      (goto-char (point-min)))))
 
 (defun diff-region-tag-selected-as-a ()
   "Select a region to compare."
@@ -530,17 +510,18 @@ If step is -1, go backward."
   (message "Now select other region to compare and run `diff-region-compare-with-b'"))
 
 (defun diff-region-compare-with-b ()
-  "Compare current region with region selected by `diff-region-tag-selected-as-a'.
-If no region is selected. You will be asked to use `kill-ring' or clipboard instead."
+  "Compare current region with the region set by `diff-region-tag-selected-as-a'.
+If no region is selected, `kill-ring' or clipboard is used instead."
   (interactive)
   (let* (rlt-buf
          diff-output
+         tmp
          ;; file A
-         (fa (make-temp-file (expand-file-name "scor"
+         (fa (make-temp-file (expand-file-name "diff-region"
                                                (or small-temporary-file-directory
                                                    temporary-file-directory))))
          ;; file B
-         (fb (make-temp-file (expand-file-name "scor"
+         (fb (make-temp-file (expand-file-name "diff-region"
                                                (or small-temporary-file-directory
                                                    temporary-file-directory)))))
     (when (and fa (file-exists-p fa) fb (file-exists-p fb))
@@ -566,12 +547,20 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
         (write-region (point-min) (point-max) fa))
       ;; diff NOW!
       ;; show the diff output
-      (if (string= (setq diff-output (shell-command-to-string (format "diff -Nabur %s %s" fa fb))) "")
-          ;; two regions are same
-          (message "Two regions are SAME!")
-        ;; show the diff
+      (cond
+       ((string= (setq diff-output (shell-command-to-string (format "%s -Nabur %s %s" diff-command fa fb))) "")
+        (message "Two regions are SAME!"))
+       ((executable-find "git")
+        (my-ensure 'magit)
+        (magit-diff-setup nil (list "--no-index" "--indent-heuristic" "--histogram")
+                          nil (list (magit-convert-filename-for-git
+                                     (expand-file-name fa))
+                                    (magit-convert-filename-for-git
+                                     (expand-file-name fb))))
+        (ffip-diff-mode))
+       (t
         (diff-region-open-diff-output diff-output
-                                      "*Diff-region-output*"))
+                                      "*Diff-region-output*")))
       ;; clean the temporary files
       (if (and fa (file-exists-p fa))
           (delete-file fa))
@@ -589,7 +578,7 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 (defun extract-list-from-package-json ()
   "Extract package list from package.json."
   (interactive)
-  (let* ((str (my-use-selected-string-or-ask "")))
+  (let* ((str (my-use-selected-string-or-ask)))
     (message "my-select-cliphist-item called => %s" str)
     (setq str (replace-regexp-in-string ":.*$\\|\"" "" str))
     ;; join lines
@@ -683,7 +672,7 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 ;; }}
 
 ;; flymake
-(with-eval-after-load "flymake"
+(with-eval-after-load 'flymake
   (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
   (setq flymake-gui-warnings-enabled nil))
 
@@ -758,7 +747,7 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 ;; {{ eacl - emacs auto complete line(s)
 (global-set-key (kbd "C-x C-l") 'eacl-complete-line)
 (global-set-key (kbd "C-c ;") 'eacl-complete-multiline)
-(with-eval-after-load "eacl"
+(with-eval-after-load 'eacl
   ;; not interested in untracked files in git repository
   (setq eacl-git-grep-untracked nil))
 ;; }}
@@ -776,7 +765,7 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 ;; @see https://github.com/szermatt/emacs-bash-completion
 (bash-completion-setup)
 
-(with-eval-after-load "grep"
+(with-eval-after-load 'grep
   ;; eacl and other general grep (rgrep, grep ...) setup
   (dolist (v '("auto"
                "target"
@@ -807,13 +796,13 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
     (kbd "C-x C-q") 'wgrep-change-to-wgrep-mode))
 
 ;; wgrep and rgrep, inspired by http://oremacs.com/2015/01/27/my-refactoring-workflow/
-(with-eval-after-load "wgrep"
+(with-eval-after-load 'wgrep
   '(define-key grep-mode-map
      (kbd "C-c C-c") 'wgrep-finish-edit))
 
 ;; {{ https://www.emacswiki.org/emacs/EmacsSession better than "desktop.el" or "savehist".
 ;; Any global variable matching `session-globals-regexp' is saved *automatically*.
-(setq session-save-file (expand-file-name "~/.emacs.d/.session"))
+(setq session-save-file (expand-file-name (concat my-emacs-d ".session")))
 (setq session-globals-max-size 2048)
 ;; can store 8Mb string
 (setq session-globals-max-string (* 8 1024 1024))
@@ -839,7 +828,7 @@ If no region is selected. You will be asked to use `kill-ring' or clipboard inst
 (add-hook 'adoc-mode-hook 'adoc-mode-hook-setup)
 ;; }}
 
-(with-eval-after-load "compile"
+(with-eval-after-load 'compile
   (defadvice compile (around compile-hack activate)
     (cond
      ((member major-mode '(octave-mode))
@@ -877,7 +866,7 @@ If the shell is already opened in some buffer, switch to that buffer."
       (ansi-term my-term-program)))))
 
 ;; {{ emms
-(with-eval-after-load "emms"
+(with-eval-after-load 'emms
   (emms-all)
   (setq emms-player-list '(emms-player-mplayer-playlist
                            emms-player-mplayer
@@ -909,7 +898,7 @@ If the shell is already opened in some buffer, switch to that buffer."
 (put 'narrow-to-defun 'disabled nil)
 
 ;; my screen is tiny, so I use minimum eshell prompt
-(with-eval-after-load "eshell"
+(with-eval-after-load 'eshell
   (setq eshell-prompt-function
         (lambda ()
           (concat (getenv "USER") " $ "))))
@@ -931,39 +920,6 @@ If the shell is already opened in some buffer, switch to that buffer."
   (interactive)
   (message (format "%d" (- (region-end) (region-beginning)))))
 
-;; {{ imenu tweakment
-(defvar rimenu-position-pair nil "positions before and after imenu jump")
-(add-hook 'imenu-after-jump-hook
-          (lambda ()
-            (let* ((start-point (marker-position (car mark-ring)))
-                   (end-point (point)))
-              (setq rimenu-position-pair (list start-point end-point)))))
-
-(defun rimenu-jump ()
-  "Jump to the closest before/after position of latest imenu jump."
-  (interactive)
-  (when rimenu-position-pair
-    (let* ((p1 (car rimenu-position-pair))
-           (p2 (cadr rimenu-position-pair)))
-
-      ;; jump to the far way point of the rimenu-position-pair
-      (if (< (abs (- (point) p1))
-             (abs (- (point) p2)))
-          (goto-char p2)
-        (goto-char p1)))))
-;; }}
-
-;; {{ my blog tools
-(defun open-blog-on-current-month ()
-  (interactive)
-  (find-file (file-truename (concat "~/blog/" (format-time-string "%Y-%m") ".org"))))
-
-(defun insert-blog-version ()
-  "Insert version of my blog post."
-  (interactive)
-  (insert (format-time-string "%Y%m%d")))
-;; }}
-
 ;; show ascii table
 (defun ascii-table ()
   "Print the ascii table."
@@ -978,11 +934,6 @@ If the shell is already opened in some buffer, switch to that buffer."
   (beginning-of-buffer))
 
 ;; {{ unique lines
-(defun uniquify-all-lines-region (start end)
-  "Find duplicate lines in region START to END keeping first occurrence."
-  (interactive "*r")
-  )
-
 (defun uniq-lines ()
   "Delete duplicate lines in region or buffer."
   (interactive)
@@ -997,28 +948,23 @@ If the shell is already opened in some buffer, switch to that buffer."
         (replace-match "\\1\n\\2")))))
 ;; }}
 
-(defun insert-file-link-from-clipboard ()
+(defun my-insert-file-link-from-clipboard ()
   "Make sure the full path of file exist in clipboard.
 This command will convert full path into relative path.
 Then insert it as a local file link in `org-mode'."
   (interactive)
   (insert (format "[[file:%s]]" (file-relative-name (my-gclip)))))
 
-(defun font-file-to-base64 (file)
-  "Convert font file into base64 encoded string."
-  (let* ((str "")
-         (file-base (file-name-sans-extension file))
-         (file-ext (file-name-extension file)))
-    (when (file-exists-p file)
+(defun my-font-file-to-base64 (font-file)
+  "Convert FONT-FILE into base64 encoded string."
+  (let* (str
+         (file-base (file-name-sans-extension font-file))
+         (file-ext (file-name-extension font-file)))
+    (when (file-exists-p font-file)
         (with-temp-buffer
-          (shell-command (concat "cat " file "|base64") 1)
+          (shell-command (concat "cat " font-file "|base64") 1)
           (setq str (replace-regexp-in-string "\n" "" (buffer-string)))))
     str))
-
-(defun current-thing-at-point ()
-  "Print current thing at point."
-  (interactive)
-  (message "thing = %s" (thing-at-point 'symbol)))
 
 ;; {{ copy the file-name/full-path in dired buffer into clipboard
 ;; `w` => copy file name
@@ -1090,19 +1036,6 @@ version control automatically."
 (require 'midnight)
 (setq midnight-mode t)
 
-(defun create-scratch-buffer ()
-  "Create a new scratch buffer."
-  (interactive)
-  (let* ((n 0) bufname)
-    (while (progn
-             (setq bufname (concat "*scratch"
-                                   (if (= n 0) "" (int-to-string n))
-                                   "*"))
-             (setq n (1+ n))
-             (get-buffer bufname)))
-    (switch-to-buffer (get-buffer-create bufname))
-    (emacs-lisp-mode)))
-
 (defun cleanup-buffer-safe ()
   "Perform a bunch of safe operations on the whitespace content of a buffer.
 Does not indent buffer, because it is used for a before-save-hook, and that
@@ -1120,7 +1053,7 @@ Including indent-buffer, which should not be called automatically on save."
 
 ;; {{ easygpg setup
 ;; @see http://www.emacswiki.org/emacs/EasyPG#toc4
-(with-eval-after-load "epg"
+(with-eval-after-load 'epg
   (defadvice epg--start (around advice-epg-disable-agent disable)
     "Make `epg--start' not able to find a gpg-agent."
     (let ((agent (getenv "GPG_AGENT_INFO")))
@@ -1142,13 +1075,13 @@ Including indent-buffer, which should not be called automatically on save."
   ;; `which-function-mode' scanning makes Emacs unresponsive in big buffer
   (unless (buffer-too-big-p)
     ad-do-it))
-(with-eval-after-load "which-function"
+(with-eval-after-load 'which-function
   (add-to-list 'which-func-modes 'org-mode))
 (which-function-mode 1)
 ;; }}
 
 ;; {{ pomodoro
-(with-eval-after-load "pomodoro"
+(with-eval-after-load 'pomodoro
   (setq pomodoro-play-sounds nil) ; *.wav is not installed
   (setq pomodoro-break-time 2)
   (setq pomodoro-long-break-time 5)
@@ -1165,7 +1098,7 @@ Including indent-buffer, which should not be called automatically on save."
   (my-ensure 'url)
   (if word (setq word (downcase word)))
   (let* ((url (format "https://dictionary.cambridge.org/pronunciation/english/%s" word))
-         (cached-mp3 (file-truename (format "~/.emacs.d/misc/%s.mp3" word)))
+         (cached-mp3 (file-truename (concat my-emacs-d (format "misc/%s.mp3" word))))
          (player (if (not *is-a-mac*) (my-guess-mplayer-path) "open"))
          html-text
          online-mp3)
@@ -1216,7 +1149,7 @@ Including indent-buffer, which should not be called automatically on save."
 ;; }}
 
 ;; {{ wgrep setup
-(with-eval-after-load "wgrep"
+(with-eval-after-load 'wgrep
   ;; save the change after wgrep finishes the job
   (setq wgrep-auto-save-buffer t)
   (setq wgrep-too-many-file-length 2024))
@@ -1246,7 +1179,7 @@ Including indent-buffer, which should not be called automatically on save."
   (edit-server-start))
 ;; }}
 
-(defun browse-current-file ()
+(defun my-browse-current-file ()
   "Open the current file as a URL using `browse-url'."
   (interactive)
   (browse-url-generic (concat "file://" (buffer-file-name))))
@@ -1281,10 +1214,34 @@ Including indent-buffer, which should not be called automatically on save."
 ;; }}
 
 ;; {{ eldoc
-(with-eval-after-load "eldoc"
+(with-eval-after-load 'eldoc
   ;; multi-line message should not display too soon
   (setq eldoc-idle-delay 1)
   (setq eldoc-echo-area-use-multiline-p t))
 ;;}}
+
+;; {{ fetch subtitles
+(defvar my-fetch-subtitles-proxy nil
+  "http proxy to fetch subtitles, like http://127.0.0.1:8118 (privoxy).")
+
+(defun my-fetch-subtitles (&optional video-file)
+  "Fetch subtitles of VIDEO-FILE.
+See https://github.com/RafayGhafoor/Subscene-Subtitle-Grabber."
+  (let* ((cmd-prefix "subgrab -l EN"))
+    (when my-fetch-subtitles-proxy
+      (setq cmd-prefix (format "http_proxy=%s https_proxy=%s %s"
+                               my-fetch-subtitles-proxy
+                               my-fetch-subtitles-proxy
+                               cmd-prefix)))
+    (cond
+     (video-file
+      (let* ((default-directory (file-name-directory video-file)))
+        (shell-command (format "%s -m \"%s\" &"
+                               cmd-prefix
+                               (file-name-base video-file)))))
+     (t
+      (shell-command (format "%s --dir . &" cmd-prefix))))))
+
+;; }}
 
 (provide 'init-misc)

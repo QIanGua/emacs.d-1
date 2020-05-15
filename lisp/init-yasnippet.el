@@ -17,7 +17,7 @@
 (defun my-yas-reload-all ()
   "Compile and reload yasnippets.  Run the command after adding new snippets."
   (interactive)
-  (yas-compile-directory (file-truename "~/.emacs.d/snippets"))
+  (yas-compile-directory (file-truename (concat my-emacs-d "snippets")))
   (yas-reload-all)
   (yas-minor-mode 1))
 
@@ -96,7 +96,7 @@
      (t (setq rlt "")))
     rlt))
 
-(with-eval-after-load "yasnippet"
+(with-eval-after-load 'yasnippet
   ;; http://stackoverflow.com/questions/7619640/emacs-latex-yasnippet-why-are-newlines-inserted-after-a-snippet
   (setq-default mode-require-final-newline nil)
   ;; (message "yas-snippet-dirs=%s" (mapconcat 'identity yas-snippet-dirs ":"))

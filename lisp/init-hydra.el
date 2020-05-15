@@ -61,7 +61,7 @@
   (local-set-key (kbd "C-c C-y") 'hydra-launcher/body))
 (add-hook 'org-mode-hook 'org-mode-hook-hydra-setup)
 
-(with-eval-after-load "find-file-in-project"
+(with-eval-after-load 'find-file-in-project
   (defhydra hydra-ffip-diff-group (:color blue)
     "
 [_k_] Previous hunk
@@ -79,7 +79,7 @@
 (add-hook 'ffip-diff-mode-hook 'ffip-diff-mode-hook-hydra-setup)
 
 ;; gnus-summary-mode
-(with-eval-after-load "gnus-sum"
+(with-eval-after-load 'gnus-sum
   (defhydra hydra-gnus-summary (:color blue)
     "
 [_F_] Forward (C-c C-f)             [_s_] Show thread
@@ -112,7 +112,7 @@
   (define-key gnus-summary-mode-map "y" 'hydra-gnus-summary/body))
 
 ;; gnus-article-mode
-(with-eval-after-load "gnus-art"
+(with-eval-after-load 'gnus-art
   (defhydra hydra-gnus-article (:color blue)
     "
 [_o_] Save attachment        [_F_] Forward
@@ -139,7 +139,7 @@
   (define-key gnus-article-mode-map "y" 'hydra-gnus-article/body))
 
 ;; message-mode
-(with-eval-after-load "message"
+(with-eval-after-load 'message
   (defhydra hydra-message (:color blue)
     "
 [_c_] Complete mail address [_H_] convert to html mail
@@ -163,7 +163,9 @@
 ;; }}
 
 ;; {{ dired
-(with-eval-after-load "dired"
+;; -*- coding: utf-8; lexical-binding: t; -*-
+
+(with-eval-after-load 'dired
   (defun my-replace-dired-base (base)
     "Change file name in `wdired-mode'"
     (let* ((fp (dired-file-name-at-point))
@@ -196,6 +198,43 @@
                           total
                           (format "%s-%s-%s.mp3" (file-name-base video-file) start total)))))
       (shell-command (concat cmd " &"))))
+
+  (defun my-extract-mkv-subtitle ()
+    "Use mkvtoolnix to extract mkv subtitle."
+    (interactive)
+    (let* ((file (file-name-nondirectory (dired-file-name-at-point)))
+           (ext (file-name-extension file))
+           (default-directory (file-name-directory (dired-file-name-at-point)))
+           lines
+           trunks
+           track-number)
+      (cond
+       ((not (string= "mkv" ext))
+        (message "Only mkv files can be processed."))
+       ((not (executable-find "mkvextract"))
+        ("Please install mkvtoolnix."))
+       (t
+        ;; split output into trunks
+        (setq trunks (split-string (shell-command-to-string (format "mkvinfo \"%s\"" file))
+                                   "| ?\\+ [A-Z][^\n]+[\n]*"))
+        ;; only interested english subtitle trunk
+        (setq trunks (delq nil (mapcar
+                                (lambda (trunk)
+
+                                  (when (and (string-match "Track type: subtitles" trunk)
+                                             (or (not (string-match "Language: " trunk))
+                                                 (string-match "Language: eng" trunk)))
+                                    trunk))
+                                trunks)))
+        (when (and (> (length trunks) 0)
+                   (string-match "Track number: \\([0-9]+\\)" (car trunks)))
+
+          ;; only extract the track number from the first truck
+          (setq track-number (1- (string-to-number (match-string 1 (car trunks)))))
+          (shell-command (format "mkvextract tracks \"%s\" %s:\"%s.srt\" > /dev/null 2>&1"
+                                 file
+                                 track-number
+                                 (file-name-base file))))))))
 
   (defun my-record-wav-by-mp3 ()
     "Record a wav using meta data from current mp3 file."
@@ -235,18 +274,20 @@
 [_cc_] Last command         [_ff_] Find         [_dd_] directory
 [_sa_] Fetch all subtitles  [_C_]  Copy
 [_s1_] Fetch on subtitle    [_rb_] Change base
-[_+_] Create directory      [_dd_] Diff 2 files
+[_vv_] Video => Mp3         [_dd_] Diff 2 files
+[_aa_] Recording Wav
+[_ee_] Mkv => Srt
+[_+_] Create directory
 "
-    ("sa" (shell-command "periscope.py -l en *.mkv *.mp4 *.avi &"))
-    ("s1" (let* ((video-file (dired-file-name-at-point))
-                 (default-directory (file-name-directory video-file)))
-            (shell-command (format "periscope.py -l en %s &" (file-name-nondirectory video-file)))))
+    ("sa" (my-fetch-subtitles))
+    ("s1" (my-fetch-subtitles (dired-file-name-at-point)))
     ("pp" (my-copy-file-info 'file-truename))
     ("nn" (my-copy-file-info 'file-name-nondirectory))
     ("bb" (my-copy-file-info 'file-name-base))
     ("dd" (my-copy-file-info 'file-name-directory))
     ("rb" (my-replace-dired-base (car kill-ring)))
     ("vv" my-extract-mp3-from-video)
+    ("ee" my-extract-mkv-subtitle)
     ("aa" my-record-wav-by-mp3)
     ("cc" my-dired-redo-last-command)
     ("zz" my-play-both-mp3-and-wav)

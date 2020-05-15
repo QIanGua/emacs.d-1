@@ -1,3 +1,5 @@
+;; -*- coding: utf-8; lexical-binding: t; -*-
+
 (defun flymake-html-init ()
   "Lint html."
   (let* ((temp-file (flymake-init-create-temp-buffer-copy
@@ -20,7 +22,6 @@
 (defun web-mode-hook-setup ()
   (unless (is-buffer-file-temp)
     (flymake-html-load)
-    (enable-flyspell-mode-conditionally)
     (setq flyspell-check-doublon nil)
     (remove-hook 'yas-after-exit-snippet-hook
                  'web-mode-yasnippet-exit-hook t)
@@ -29,7 +30,7 @@
 
 (add-hook 'web-mode-hook 'web-mode-hook-setup)
 
-(with-eval-after-load "web-mode"
+(with-eval-after-load 'web-mode
   ;; make org-mode export fail, I use evil and evil-matchit
   ;; to select text, so expand-region.el is not used
   (remove-hook 'web-mode-hook 'er/add-web-mode-expansions)

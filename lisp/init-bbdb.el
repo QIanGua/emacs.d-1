@@ -1,7 +1,6 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
 (defun message-mode-hook-setup ()
-  (enable-flyspell-mode-conditionally)
   (bbdb-initialize 'message)
   (bbdb-initialize 'gnus)
   (local-set-key (kbd "TAB") 'bbdb-complete-name))
@@ -39,7 +38,7 @@
 
 (add-hook 'bbdb-initialize-hook 'bbdb-initialize-hook-setup)
 
-(with-eval-after-load "gmail2bbdb"
+(with-eval-after-load 'gmail2bbdb
   (setq gmail2bbdb-exclude-people-without-name t))
 
 (provide 'init-bbdb)

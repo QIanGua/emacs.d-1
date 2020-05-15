@@ -2,7 +2,7 @@
 
 (ivy-mode 1) ; it enables ivy UI for `kill-buffer'
 
-(with-eval-after-load "counsel"
+(with-eval-after-load 'counsel
   ;; automatically pick up cygwin cli tools for counsel
   (cond
    ((executable-find "rg")
@@ -49,20 +49,61 @@
 
 (define-key read-expression-map (kbd "C-r") 'counsel-expression-history)
 
+(defvar my-git-recent-files-extra-options ""
+  "Extra options for git recent files.
+For example, could be \"---author=MyName\"")
+
+(defmacro my-git-extract-file (n items rlt)
+  "Extract Nth item from ITEMS as a file candidate.
+The candidate could be placed in RLT."
+  `(let* ((file (string-trim (nth ,n ,items))))
+     (when (file-exists-p file)
+       (push (cons file (file-truename file)) ,rlt))))
+
+(defun my-git-recent-files ()
+  "Get files in my recent git commits."
+  (let* ((default-directory (locate-dominating-file default-directory ".git"))
+         ;; two weeks is a sprint, minus weekend and days for sprint review and test
+         (cmd (format "git --no-pager log %s --name-status --since=\"10 days ago\" --pretty=format:"
+                      my-git-recent-files-extra-options))
+         (lines (delq nil (delete-dups (split-string (shell-command-to-string cmd) "\n+"))))
+         items
+         rlt)
+    (when lines
+      (dolist (l lines)
+        (setq items (split-string l "[ \t]+" l))
+        (cond
+         ((= (length items) 2)
+          (my-git-extract-file 1 items rlt))
+         ((= (length items) 3)
+          (my-git-extract-file 1 items rlt)
+          (my-git-extract-file 2 items rlt)))))
+    rlt))
+
 (defun my-counsel-recentf (&optional n)
   "Find a file on `recentf-list'.
-If N is not nil, only list files in current project."
+If N is 1, only list files in current project.
+If N is 2, list files in my recent 20 commits."
   (interactive "P")
   (my-ensure 'recentf)
+  (unless n (setq n 0))
   (recentf-mode 1)
   (let* ((files (mapcar #'substring-no-properties recentf-list))
-         (root-dir (if (ffip-project-root) (file-truename (ffip-project-root)))))
-    (when (and n root-dir)
-      (setq files (delq nil (mapcar (lambda (f) (path-in-directory-p f root-dir)) files))))
-    (ivy-read "Recentf: "
+         (root-dir (if (ffip-project-root) (file-truename (ffip-project-root))))
+         (hint "Recent files: "))
+    (cond
+     ((and (eq n 1) root-dir)
+      (setq hint (format "Recent files in %s: " root-dir))
+      (setq files (delq nil (delete-dups (mapcar (lambda (f) (path-in-directory-p f root-dir)) files)))))
+     ((eq n 2)
+      (setq hint (format "Files in recent Git commits: "))
+      (setq files (my-git-recent-files))))
+
+    (ivy-read hint
               files
               :initial-input (if (region-active-p) (my-selected-str))
               :action (lambda (f)
+                        (if (consp f) (setq f (cdr f)))
                         (with-ivy-window
                           (find-file f)))
               :caller 'counsel-recentf)))
@@ -100,11 +141,7 @@ If N is not nil, only list files in current project."
   (shell-command "history -r") ; reload history
   (let* ((collection
           (nreverse
-           (split-string (with-temp-buffer
-                           (insert-file-contents (file-truename "~/.bash_history"))
-                           (buffer-string))
-                         "\n"
-                         t))))
+           (my-read-lines (file-truename "~/.bash_history")))))
     (ivy-read (format "Bash history:") collection
               :action (lambda (val)
                         (kill-new val)
@@ -193,7 +230,7 @@ If N is nil, use `ivy-mode' to browse `kill-ring'."
               :keymap ivy-switch-buffer-map
               :caller 'ivy-switch-buffer)))
 
-(with-eval-after-load "ivy"
+(with-eval-after-load 'ivy
   ;; work around ivy issue.
   ;; @see https://github.com/abo-abo/swiper/issues/828
   (setq ivy-display-style 'fancy))
@@ -279,12 +316,14 @@ If N is nil, use `ivy-mode' to browse `kill-ring'."
   (interactive)
   (cond
    ((my-use-tags-as-imenu-function-p)
+    ;; see code of `my-use-tags-as-imenu-function-p'. Currently we only use ctags for imenu
+    ;; in typescript because `lsp-mode' is too damn slow
     (let* ((imenu-create-index-function 'counsel-etags-imenu-default-create-index-function))
       (my-counsel-imenu)))
    (t
     (my-counsel-imenu))))
 
-(with-eval-after-load "ivy"
+(with-eval-after-load 'ivy
   ;; better performance on everything (especially windows), ivy-0.10.0 required
   ;; @see https://github.com/abo-abo/swiper/issues/1218
   (setq ivy-dynamic-exhibit-delay-ms 250)
