@@ -6,7 +6,7 @@
 ;; URL: http://github.com/redguardtoo/counsel-etags
 ;; Package-Requires: ((counsel "0.13.0"))
 ;; Keywords: tools, convenience
-;; Version: 1.9.8
+;; Version: 1.9.9
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -432,16 +432,9 @@ Default value is 300 seconds."
   :group 'counsel-etags
   :type 'integer)
 
-(defcustom counsel-etags-find-program nil
-  "GNU find program.  Program is automatically detected if it's nil.
-On Windows program path separator IS four backward slashes by default."
-  :group 'counsel-etags
-  :type 'string)
-
 (defcustom counsel-etags-tags-program nil
   "Tags Program.  Program is automatically detected if it's nil.
 You can set up this variable manually instead.
-If you use Emacs etags, set this variable to \"etags\".'.
 If you use Exuberant Ctags, set this variable to \"ctags -e -L\".'.
 You may add extra options to tags program.  For example, as C developer
 may set this variable to \"ctags --c-kinds=defgpstux -e -L\".
@@ -512,14 +505,18 @@ Return nil if it's not found."
         (counsel-etags-win-path executable-name "f")
         (counsel-etags-win-path executable-name "g")
         (counsel-etags-win-path executable-name "h")
-        executable-name))
+        ;; There is "find.exe" in Windows which could be wrongly
+        ;; used as GNU/BSD Find. So don't use "find" at all
+        ;; in this case.
+        (unless (string-match "find" executable-name)
+          executable-name)))
    (t
     (if (executable-find executable-name) (executable-find executable-name)))))
 
 ;;;###autoload
 (defun counsel-etags-version ()
   "Return version."
-  (message "1.9.8"))
+  (message "1.9.9"))
 
 ;;;###autoload
 (defun counsel-etags-get-hostname ()
@@ -607,11 +604,23 @@ Return nil if it's not found."
                                                                   invocation-directory))))
     (replace-regexp-in-string "/" "\\\\" emacs-executable)))
 
+(defun counsel-etags--ctags--info (ctags-program)
+  "Get CTAGS-PROGRAM information."
+  (shell-command-to-string (concat ctags-program " --version")))
+
 (defun counsel-etags-is-exuberant-ctags (ctags-program)
   "If CTAGS-PROGRAM is Exuberant Ctags."
-  (let* ((cmd-output (shell-command-to-string (concat ctags-program " --version"))))
+  (let* ((cmd-output (counsel-etags--ctags--info ctags-program)))
     (and (not (string-match-p "Universal Ctags" cmd-output))
          (string-match-p "Exuberant Ctags" cmd-output))))
+
+(defun counsel-etags-valid-ctags (ctags-program)
+  "If CTAGS-PROGRAM is Ctags return the program.
+If it's Emacs etags return nil."
+  (when ctags-program
+    (let* ((cmd-output (counsel-etags--ctags--info ctags-program)))
+      (unless (string-match-p " ETAGS.README" cmd-output)
+        ctags-program))))
 
 (defun counsel-etags-ctags-options-file-cli (ctags-program)
   "Use CTAGS-PROGRAM to create command line for `counsel-etags-ctags-options-file'."
@@ -648,25 +657,11 @@ Return nil if it's not found."
         (message "counsel-etags-ctags-ingore-config returns %s" rlt))
     rlt))
 
-(defun counsel-etags-get-scan-command (find-program ctags-program &optional code-file)
-  "Create scan command for SHELL from FIND-PROGRAM and CTAGS-PROGRAM.
+(defun counsel-etags-get-scan-command (ctags-program &optional code-file)
+  "Create scan command for SHELL CTAGS-PROGRAM.
 If CODE-FILE is a real file, the command scans it and output to stdout."
   (let* ((cmd ""))
     (cond
-     ;; use both find and ctags
-     ((and find-program ctags-program)
-      (setq cmd (format "%s . \\( %s \\) -prune -o -type f -not -size +%sk %s -print | %s -e %s %s -L -"
-                        find-program
-                        (mapconcat (lambda (p)
-                                     (format "-iwholename \"*/%s\"" (counsel-etags-dir-pattern p)) )
-                                   counsel-etags-ignore-directories " -or ")
-                        counsel-etags-max-file-size
-                        (mapconcat (lambda (n) (format "-not -name \"%s\"" n))
-                                   counsel-etags-ignore-filenames " ")
-                        ctags-program
-                        (counsel-etags-ctags-options-file-cli ctags-program)
-                        (counsel-etags-ctags-ingore-config))))
-
      ;; Use ctags only
      (ctags-program
       (setq cmd (format "%s %s %s -e %s %s %s -R %s"
@@ -685,7 +680,7 @@ If CODE-FILE is a real file, the command scans it and output to stdout."
                         ;; --<my-lang>-kinds=f still accept all user defined regex
                         ;; so we have to filter in Emacs Lisp
                         (if code-file "-x" "")
-                        (if code-file (format "\"%s\"" code-file) "."))))
+                        (if code-file (format "\"%s\"" code-file) ""))))
 
      ;; fall back to Emacs bundled etags
      (t
@@ -697,27 +692,28 @@ If CODE-FILE is a real file, the command scans it and output to stdout."
       ;; (setq cmd (format "%s ." ctags-program))
       (message "You need install Ctags at first.  Universal Ctags is highly recommended.")))
     (when counsel-etags-debug
-      (message "counsel-etags-get-scan-command called => find-program=%s ctags-program=%s cmd=%s"
-               find-program ctags-program cmd))
+      (message "counsel-etags-get-scan-command called => ctags-program=%s cmd=%s"
+               ctags-program cmd))
     cmd))
 
 ;;;###autoload
 (defun counsel-etags-scan-dir-internal (src-dir)
   "Create tags file from SRC-DIR."
   ;; TODO save the ctags-opts into hash
-  (let* ((find-program (or counsel-etags-find-program
-                           (counsel-etags-guess-program "find")))
-         (ctags-program (or counsel-etags-tags-program
-                            (counsel-etags-guess-program "ctags")))
+  (let* ((ctags-program (or counsel-etags-tags-program
+                            (counsel-etags-valid-ctags
+                             (counsel-etags-guess-program "ctags"))))
          (default-directory src-dir)
          ;; if both find and ctags exist, use both
          ;; if only ctags exists, use ctags
          ;; run find&ctags to create TAGS, `-print` is important option to filter correctly
-         (cmd (counsel-etags-get-scan-command find-program ctags-program))
+         (cmd (counsel-etags-get-scan-command ctags-program))
          (tags-file (counsel-etags-get-tags-file-path src-dir)))
     (unless ctags-program
-      (error "Please install Ctags before running this program!"))
-    (when counsel-etags-debug (message "counsel-etags-scan-dir-internal called => src-dir=%s find-program=%s ctags-program=%s default-directory=%s cmd=%s" src-dir find-program ctags-program default-directory cmd))
+      (error "Please install Exuberant Ctags or Universal Ctags before running this program!"))
+    (when counsel-etags-debug
+      (message "counsel-etags-scan-dir-internal called => src-dir=%s" src-dir)
+      (message "default-directory=%s cmd=%s" default-directory cmd))
     ;; always update cli options
     (message "%s at %s" (if counsel-etags-debug cmd "Scan") default-directory)
     (counsel-etags-async-shell-command cmd tags-file)))
@@ -1328,7 +1324,7 @@ CONTEXT is extra information collected before finding tag definition."
                       code-file
                       "\""))
              (t
-              (counsel-etags-get-scan-command nil ctags-program code-file))))
+              (counsel-etags-get-scan-command ctags-program code-file))))
 
       ;; create one item for imenu list
       ;; (cons name (if imenu-use-markers (point-marker) (point)))

@@ -358,6 +358,31 @@ If the character before and after CH is space or tab, CH is NOT slash"
 
 ;; {{
 (defvar evil-global-markers-history nil)
+<<<<<<< HEAD
+(defadvice evil-set-marker (before evil-set-marker-before-hack activate)
+  (let* ((args (ad-get-args 0))
+         (c (nth 0 args))
+         (pos (or (nth 1 args) (point))))
+    ;; only remember global markers
+    (when (and (>= c ?A) (<= c ?Z) buffer-file-name)
+      (setq evil-global-markers-history
+            (delq nil
+                  (mapcar `(lambda (e)
+                             (unless (string-match (format "^%s@" (char-to-string ,c)) e)
+                               e))
+                          evil-global-markers-history)))
+      (setq evil-global-markers-history
+            (add-to-list 'evil-global-markers-history
+                         (format "%s@%s:%d:%s"
+                                 (char-to-string c)
+                                 (file-truename buffer-file-name)
+                                 (line-number-at-pos pos)
+                                 (string-trim (my-line-str))))))))
+
+(defadvice evil-goto-mark-line (around evil-goto-mark-line-hack activate)
+  (let* ((args (ad-get-args 0))
+         (c (nth 0 args))
+=======
 (defun my-evil-set-marker-hack (char &optional pos advance)
   "Place evil marker's position into history."
   (unless pos (setq pos (point)))
@@ -381,6 +406,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
 (defun my-evil-goto-mark-line-hack (orig-func &rest args)
   "Place line marker into history."
   (let* ((char (nth 0 args))
+>>>>>>> f4b2d8bcccdee0702807265eecc5002c715eb882
          (orig-pos (point)))
     (condition-case nil
         (apply orig-func args)
