@@ -126,9 +126,9 @@
   (require-init 'init-gtags t)
   (require-init 'init-clipboard)
   (require-init 'init-ctags t)
-  ;; (require-init 'init-bbdb t)
-  ;; (require-init 'init-gnus t)
-  ;; (require-init 'init-lua-mode t)
+  (require-init 'init-bbdb t)
+  (require-init 'init-gnus t)
+  (require-init 'init-lua-mode t)
   (require-init 'init-workgroups2 t) ; use native API in lightweight mode
   (require-init 'init-term-mode t)
   (require-init 'init-web-mode t)
@@ -149,7 +149,7 @@
   ;; handy tools though not must have
   (require-init 'init-misc t)
 
-  ;; (require-init 'init-emacs-w3m t)
+  (require-init 'init-emacs-w3m t)
   (require-init 'init-shackle t)
   (require-init 'init-dired t)
   (require-init 'init-writting t)
@@ -168,14 +168,14 @@
   (setq load-path (cdr load-path))
   (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir))
 
-  (unless (my-vc-merge-p)
-    ;; my personal setup, other major-mode specific setup need it.
-    ;; It's dependent on *.el in `my-site-lisp-dir'
-    (load (expand-file-name "~/.custom.el") t nil)
+   (unless (my-vc-merge-p)
+     ;; my personal setup, other major-mode specific setup need it.
+     ;; It's dependent on *.el in `my-site-lisp-dir'
+     (load (expand-file-name "~/.custom.el") t nil)
 
-    ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
-    ;; See `custom-file' for details.
-    (load (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el"))) t t)))
+     ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
+     ;; See `custom-file' for details.
+     (load (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el"))) t t)))
 
 (setq gc-cons-threshold best-gc-cons-threshold)
 
