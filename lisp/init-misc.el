@@ -15,14 +15,6 @@
 (global-set-key (kbd "C-q") #'aya-open-line)
 ;; }}
 
-;; {{ `sh-mode' setup
-(defun sh-mode-hook-setup ()
-  (when (and *emacs26* (executable-find "shellcheck"))
-    (flymake-shellcheck-load)
-    (flymake-mode 1)))
-(add-hook 'sh-mode-hook 'sh-mode-hook-setup)
-;; }}
-
 ;; {{ ace-link
 (ace-link-setup-default)
 (global-set-key (kbd "M-o") 'ace-link)
@@ -184,7 +176,7 @@ This function can be re-used by other major modes after compilation."
 
     ;; {{ spell check camel-case word
     (my-ensure 'wucuo)
-    (wucuo-start t)
+    (wucuo-start)
     ;; }}
 
     ;; @see http://xugx2007.blogspot.com.au/2007/06/benjamin-rutts-emacs-c-development-tips.html
@@ -673,7 +665,6 @@ If no region is selected, `kill-ring' or clipboard is used instead."
 
 ;; flymake
 (with-eval-after-load 'flymake
-  (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
   (setq flymake-gui-warnings-enabled nil))
 
 ;; {{ check attachments
@@ -758,7 +749,9 @@ If no region is selected, `kill-ring' or clipboard is used instead."
 ;; }}
 
 ;; @see https://github.com/szermatt/emacs-bash-completion
-(bash-completion-setup)
+;; Other completion functions have higher priority
+;; than `bash-completion-dynamic-complete'.
+(add-hook 'shell-dynamic-complete-functions #'bash-completion-dynamic-complete t)
 
 (with-eval-after-load 'grep
   ;; eacl and other general grep (rgrep, grep ...) setup
@@ -1230,7 +1223,6 @@ See https://github.com/RafayGhafoor/Subscene-Subtitle-Grabber."
                                (file-name-base video-file)))))
      (t
       (shell-command (format "%s --dir . &" cmd-prefix))))))
-
 ;; }}
 
 (provide 'init-misc)
