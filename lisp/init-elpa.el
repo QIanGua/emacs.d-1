@@ -389,7 +389,7 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
      ;exotica-theme
      ;eziam-theme
      ;farmhouse-theme
-     fantom-theme
+     ;fantom-theme
      ;flatui-theme
      ;gandalf-theme
      ;gotham-theme
