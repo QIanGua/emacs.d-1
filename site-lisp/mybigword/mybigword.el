@@ -4,9 +4,9 @@
 ;;
 ;; Author: Chen Bin <chenbin DOT sh AT gmail.com>
 ;; URL: https://github.com/redguardtoo/mybigword
-;; Version: 0.0.2
+;; Version: 0.0.5
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "25.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 
@@ -50,8 +50,49 @@
 ;;
 ;;   Run `mybigword-show-big-words-from-file'
 ;;   Run `mybigword-show-big-words-from-current-buffer'
+;;
+;;
+;; Customize `mybigword-excluded-words' or `mybigword-personal-excluded-words' to
+;; exclude words.
+;;
+;; Tips,
+;;
+;;   1. Customize `mybigword-default-format-function' to format the word for display.
+;;   If it's `mybigword-format-with-dictionary', the `dictionary-definition' is used to
+;;   find the definitions of all big words.
+;;
+;;   Sample to display the dictionary definitions of big words:
+;;
+;;     (let* ((mybigword-default-format-function 'mybigword-format-with-dictionary))
+;;       (mybigword-show-big-words-from-current-buffer))
+;;
+;;   You can also set `mybigword-default-format-header-function' to add a header before
+;;   displaying words.
+;;
+;;   2. Parse the *.srt to play the video containing the word in org file
+;;   Make sure the org tree node has the property =SRT_PATH=.
+;;
+;;   Sample of org file:
+;;    * Star Trek s06e26
+;;      :PROPERTIES:
+;;      :SRT_PATH: ~/Star.Trek.DS9-s06e26.Tears.of.the.Prophets.srt
+;;      :END:
+;;    telepathic egotist
+;;
+;;   Move focus over the word like "egotist". Run "M-x mybigword-play-video-of-word-at-point".
+;;   mplayer plays the corresponding video at the time the word is spoken.
+;;
+;;   Please note `mybigword-play-video-of-word-at-point' can be used in other major modes.
+;;   See `mybigword-default-video-info-function' for details.
+;;   Customize `mybigword-hide-word-function' to hide word for display
+;;
 
 ;;; Code:
+
+(require 'dictionary nil t)
+(require 'outline)
+(require 'org)
+(require 'cl-lib)
 
 (defgroup mybigword nil
   "Filter the words by the frequency usage of each word."
@@ -65,11 +106,23 @@ If nil, the default data is used."
   :group 'mybigword
   :type 'string)
 
+(defcustom mybigword-mplayer-program "mplayer"
+  "Mplayer program."
+  :group 'mybigword
+  :type 'string)
+
+(defcustom mybigword-mplayer-rewind-time 5
+  "Rewind a few seconds when mplayer playing video."
+  :group 'mybigword
+  :type 'number)
+
 (defcustom mybigword-excluded-words
   '("anybody"
     "anymore"
     "anyone"
     "anyway"
+    "aren"
+    "brien"
     "couldn"
     "dear"
     "didn"
@@ -89,21 +142,66 @@ If nil, the default data is used."
     "our"
     "ours"
     "ourselves"
+    "shouldn"
     "sorry"
     "thank"
     "theirs"
     "then"
     "wasn"
+    "weren"
     "worry"
-    "wouldn")
+    "wouldn"
+    "yourself"
+    "yourselves")
   "The words being excluded."
   :group 'mybigword
   :type '(repeat string))
+
+(defcustom mybigword-personal-excluded-words nil
+  "The personal words being excluded."
+  :group 'mybigword
+  :type '(repeat string))
+
+(defcustom mybigword-default-format-header-function
+  (lambda (file) (ignore file) "")
+  "The function to format the header before displaying big word list."
+  :group 'mybigword
+  :type 'function)
+
+(defcustom mybigword-default-format-function
+  'mybigword-format-word
+  "The function to format big word before displaying it.
+If it's `mybigword-format-with-dictionary', the `dictionary-definition' is used."
+  :group 'mybigword
+  :type 'function)
+
+(defcustom mybigword-default-format-function
+  'mybigword-format-word
+  "The function to format big word before displaying it.
+If it's `mybigword-format-with-dictionary', the `dictionary-definition' is used."
+  :group 'mybigword
+  :type 'function)
+
+(defcustom mybigword-default-video-info-function
+  'mybigword-org-video-info
+  "The function to play the video of the big word."
+  :group 'mybigword
+  :type 'function)
 
 (defcustom mybigword-upper-limit 4
   "The word whose zipf frequency is below this limit is big word."
   :group 'mybigword
   :type 'float)
+
+(defcustom mybigword-hide-unknown-word t
+  "Hide unknown word."
+  :group 'mybigword
+  :type 'boolean)
+
+(defcustom mybigword-hide-word-function nil
+  "The function to hide a word which has one parameter \" word\"."
+  :group 'mybigword
+  :type 'function)
 
 ;; internal variable
 (defvar mybigword-cache nil
@@ -111,6 +209,12 @@ If nil, the default data is used."
 
 (defvar mybigword-debug nil
   "For debug only.")
+
+(defun mybigword-read-file (file)
+  "Read FILE's content and return it."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (buffer-string)))
 
 ;;;###autoload
 (defun mybigword-update-cache ()
@@ -125,17 +229,14 @@ If nil, the default data is used."
          raw-content
          content)
 
-    (when mybigword-debug
-      (message "mybigword-update-cache called file=%s" file))
+    (if mybigword-debug (message "mybigword-update-cache called file=%s" file))
 
     (when (file-exists-p file)
       ;; initialize hash table whose key is from a...z
       (setq content (make-hash-table :test #'equal))
 
       ;; read content of file
-      (setq raw-content (with-temp-buffer
-                          (insert-file-contents file)
-                          (buffer-string)))
+      (setq raw-content (mybigword-read-file file))
       (setq i 1)
       (while (< i 26)
         (let* ((ch (+ ?a i)))
@@ -151,10 +252,11 @@ If nil, the default data is used."
                (substring-no-properties raw-content beg (length raw-content))
                content)
       (setq mybigword-cache (list :content content
-                                 :file file
-                                 :timestamp (float-time (current-time))
-                                 :filesize (nth 7 (file-attributes file))))
+                                  :file file
+                                  :timestamp (float-time (current-time))
+                                  :filesize (nth 7 (file-attributes file))))
       (message "Frequency file %s is loaded." file))))
+
 
 (defmacro mybigword-extract-freq (word str)
   "Extract WORD's usage frequency from STR."
@@ -186,21 +288,41 @@ If nil, the default data is used."
       (setq rlt (match-string 1 raw-word))))
     rlt))
 
-(defun mybigword-show-big-words-from-content (content)
-  "Show words whose zipf frequency is below `mybigword-upper-limit' in CONTENT."
+(defun mybigword-format-word (word zipf)
+  "Format WORD and ZIPF."
+  (format "%s %s\n" word zipf))
+
+(defun mybigword-format-with-dictionary (word zipf)
+  "Format WORD and ZIPF with dictionary api."
+  (ignore zipf)
+  (condition-case nil
+      (concat (dictionary-definition word) "\n\n\n")
+    (error nil)))
+
+(defun mybigword-show-big-words-from-content (content file)
+  "Show words whose zipf frequency is below `mybigword-upper-limit' in CONTENT.
+FILE is the file path."
   (unless mybigword-cache (mybigword-update-cache))
   (let* ((big-words (mybigword-extract-words content)))
     (cond
-       (big-words
-        ;; sort windows
-        (setq big-words (sort big-words (lambda (a b) (< (cdr a) (cdr b)))))
-        (switch-to-buffer-other-window "*BigWords*")
-        (erase-buffer)
-        (dolist (bw big-words)
-          (insert (format "%s %s\n" (car bw) (cdr bw))))
-        (goto-char (point-min)))
-       (t
-        (message "No big word is found!")))))
+     (big-words
+      ;; sort windows
+      (setq big-words (sort big-words (lambda (a b) (< (cdr a) (cdr b)))))
+      (switch-to-buffer-other-window "*BigWords*")
+      (erase-buffer)
+      (insert (funcall mybigword-default-format-header-function file))
+      (dolist (bw big-words)
+        (let* (str
+               (word (car bw))
+               (zipf (cdr bw)))
+          (unless (or (and mybigword-hide-unknown-word (eq zipf -1))
+                      (and mybigword-hide-word-function
+                           (not (funcall mybigword-hide-word-function word))))
+            (when (setq str (funcall mybigword-default-format-function word zipf))
+              (insert str)))))
+      (goto-char (point-min)))
+     (t
+      (message "No big word is found!")))))
 
 (defmacro mybigword-push-cand (word dict cands)
   "Get WORD and its frequency from DICT.  Push them into CANDS."
@@ -208,7 +330,8 @@ If nil, the default data is used."
 
 (defmacro mybigword-push-word (word frequency result)
   "Push WORD FREQUENCY into RESULT."
-  `(unless (member ,word mybigword-excluded-words)
+  `(unless (or (member ,word mybigword-excluded-words)
+               (member ,word mybigword-personal-excluded-words))
      (push (cons ,word ,frequency) ,result)))
 
 ;;;###autoload
@@ -220,6 +343,7 @@ If nil, the default data is used."
          rlt)
 
     (when mybigword-debug
+      (message "mybigword-extract-words called. words=%s" words)
       (message "mybigword-cache file=%s size=%s"
                (plist-get mybigword-cache :file)
                (plist-get mybigword-cache :filesize)))
@@ -246,13 +370,16 @@ If nil, the default data is used."
              (t
               ;; word is not found in dictionary
               (mybigword-push-word word -1 rlt)))))))
+    ;; need remove duplicates
+    ;; for example, "notifies" and "notify" is actually one word
+    (setq rlt (delq nil (delete-dups rlt)))
     rlt))
 
 ;;;###autoload
 (defun mybigword-show-big-words-from-current-buffer ()
   "Show big words in current buffer."
   (interactive)
-  (mybigword-show-big-words-from-content (buffer-string)))
+  (mybigword-show-big-words-from-content (buffer-string) buffer-file-name))
 
 ;;;###autoload
 (defun mybigword-show-big-words-from-file (file)
@@ -260,10 +387,101 @@ If nil, the default data is used."
   (interactive (list (read-file-name "Find file: " nil default-directory t)))
   (when (and file (file-exists-p file))
     (unless mybigword-cache (mybigword-update-cache))
-    (let* ((content (with-temp-buffer
-                      (insert-file-contents file)
-                      (buffer-string))))
-      (mybigword-show-big-words-from-content content))))
+    (let* ((content (mybigword-read-file file)))
+      (mybigword-show-big-words-from-content content file))))
+
+(defun mybigword-video-path (srt-path)
+  "Return video path of SRT-PATH."
+  (let* (rlt
+         (dir (file-name-directory srt-path))
+         (base (file-name-base srt-path)))
+    (cond
+     ((and (setq rlt (concat dir base ".mp4"))
+           (file-exists-p rlt))
+      rlt)
+     ((and (setq rlt (concat dir base ".mkv"))
+           (file-exists-p rlt))
+      rlt)
+     (t
+      nil))))
+
+(defun mybigword-mplayer-start-time (chunks word)
+  "Get video start time from CHUNKS and WORD."
+  (let* ((matched (cl-find-if (lambda (c) (string-match (regexp-quote word) c))
+                              chunks))
+         (regexp "^\\([0-9]+:[0-9]+:[0-9]+\\),[0-9]+ +-->"))
+    (when (and matched (string-match regexp matched))
+      (match-string 1 matched))))
+
+(defun mybigword-adjust-start-time (start-time)
+  "Rewind back START-TIME a few seconds."
+  (let* ((a (mapcar #'string-to-number (split-string start-time ":")))
+         h m s)
+    (setq s (- (nth 2 a) mybigword-mplayer-rewind-time))
+    (setq m (nth 1 a))
+    (setq h (nth 0 a))
+    ;; adjust second
+    (when (< s 0)
+      (setq s (+ 60 s))
+      (setq m (1- m)))
+    ;; adjust minute
+    (when (< m 0)
+      (setq m (+ 60 m))
+      (setq h (1- h)))
+    ;; adjust hour
+    (when (< h 0)
+      (setq s 0)
+      (setq m 0))
+    (format "%02d:%02d:%02d" h m s)))
+
+(defun mybigword-run-mplayer (start-time video-path)
+  "Use START-TIME and VIDEO-PATH to run mplayer."
+  (when start-time
+    (let* ((cmd (format "%s -ss %s -osdlevel 2 %s"
+                        mybigword-mplayer-program
+                        (mybigword-adjust-start-time start-time)
+                        video-path))
+           (proc (start-process "Mplayer" nil shell-file-name shell-command-switch cmd)))
+      (set-process-sentinel proc 'ignore))))
+
+(defun mybigword-org-video-info (word)
+  "Find the video information of the WORD in `org-mode'.
+The information is in current org node's \"SRT_PATH\" property."
+  (let* (rlt srt-path video-path)
+    (cond
+     ((not (eq major-mode 'org-mode))
+      (message "This function can only be used in `org-mode'."))
+
+     ((not (setq srt-path (save-excursion (condition-case nil
+                                              (outline-up-heading 1)
+                                            (error nil))
+                                          (org-entry-get (point) "SRT_PATH"))))
+      (message "Current org node does not have SRC_PATH property"))
+
+     ((not (file-exists-p srt-path))
+      (message "File %s does not exist." srt-path))
+
+     ((not (setq video-path (mybigword-video-path srt-path)))
+      (message "Video of subtitle %s does not exist." srt-path))
+
+     (t
+      (let* ((chunks (split-string (mybigword-read-file srt-path)
+                                   "\n\n+[0-9]+ *\n"))
+             (start-time (mybigword-mplayer-start-time chunks word)))
+        (when start-time
+          (setq rlt (list :video-path video-path :start-time start-time))))))
+    rlt))
+
+;;;###autoload
+(defun mybigword-play-video-of-word-at-point ()
+  "Search video's subtitle (*.srt) and play the video containing the word."
+  (interactive)
+  (let* ((word (or (thing-at-point 'word) (read-string "Input a word: ")))
+         info)
+    (when (and word
+               (setq info (funcall mybigword-default-video-info-function word)))
+      (mybigword-run-mplayer (plist-get info :start-time)
+                             (plist-get info :video-path)))))
 
 (provide 'mybigword)
 ;;; mybigword.el ends here

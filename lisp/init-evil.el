@@ -468,7 +468,6 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "m" 'evil-set-marker
   "em" 'my-erase-visible-buffer
   "eb" 'eval-buffer
-  "sd" 'sudo-edit
   "sc" 'scratch
   "ee" 'eval-expression
   "aa" 'copy-to-x-clipboard ; used frequently
@@ -536,7 +535,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
   ;; p: previous; n: next; w:hash; W:complete hash; g:nth version; q:quit
   "tm" 'my-git-timemachine
   ;; toggle overview,  @see http://emacs.wordpress.com/2007/01/16/quick-and-dirty-code-folding/
-  "oo" 'compile
+  "op" 'compile
   "c$" 'org-archive-subtree ; `C-c $'
   ;; org-do-demote/org-do-premote support selected region
   "c<" 'org-do-promote ; `C-c C-<'
@@ -554,18 +553,24 @@ If the character before and after CH is space or tab, CH is NOT slash"
   "si" 'evilmi-select-items
   "jb" 'js-beautify
   "jp" 'my-print-json-path
+  ;; {{ @see http://ergoemacs.org/emacs/emacs_pinky_2020.html
+  ;; `keyfreq-show' proved sub-window operations happen most.
   "x0" 'delete-window
   "x1" 'delete-other-windows
   "x2" 'split-window-vertically
   "x3" 'split-window-horizontally
-  ;; {{ @see http://ergoemacs.org/emacs/emacs_pinky_2020.html
   "xq" 'delete-window
-  "xe" 'delete-other-windows
   "xa" 'split-window-vertically
   "xd" 'split-window-horizontally
+  "s0" 'delete-window
+  "s1" 'delete-other-windows
+  "s2" 'split-window-vertically
+  "s3" 'split-window-horizontally
+  "sq" 'delete-window
+  "sa" 'split-window-vertically
+  "sd" 'split-window-horizontally
+  "oo" 'delete-other-windows
   ;; }}
-  "s2" 'ffip-split-window-vertically
-  "s3" 'ffip-split-window-horizontally
   "xr" 'rotate-windows
   "xt" 'toggle-two-split-window
   "uu" 'winner-undo
@@ -902,7 +907,7 @@ If the character before and after CH is space or tab, CH is NOT slash"
 ;; press ",xx" to expand region
 ;; then press "char" to contract, "x" to expand
 (with-eval-after-load 'evil
-  ;; evil re-assign "M-." to `evil-repeat-pop-next` which I don't use actually.
+  ;; evil re-assign "M-." to `evil-repeat-pop-next' which I don't use actually.
   ;; Restore "M-." to original binding command
   (define-key evil-normal-state-map (kbd "M-.") 'xref-find-definitions)
   (setq expand-region-contract-fast-key "char")
