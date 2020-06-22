@@ -2,7 +2,6 @@
 
 ;; Without this comment emacs25 adds (package-initialize) here
 ;; (package-initialize)
-
 (let* ((minver "25.1"))
   (when (version< emacs-version minver)
     (error "Emacs v%s or higher is required." minver)))
@@ -57,7 +56,7 @@
 ;; Emacs 25 does gc too frequently
 (when *emacs25*
   ;; (setq garbage-collection-messages t) ; for debug
-  (setq best-gc-cons-threshold (* 64 1024 1024))
+  (setq best-gc-cons-threshold (* 63 1024 1024))
   (setq gc-cons-percentage 0.5)
   (run-with-idle-timer 5 t #'garbage-collect))
 
@@ -126,8 +125,8 @@
   (require-init 'init-gtags t)
   (require-init 'init-clipboard)
   (require-init 'init-ctags t)
-  (require-init 'init-bbdb t)
-  (require-init 'init-gnus t)
+  ;; (require-init 'init-bbdb t)
+  ;; (require-init 'init-gnus t)
   (require-init 'init-lua-mode t)
   (require-init 'init-workgroups2 t) ; use native API in lightweight mode
   (require-init 'init-term-mode t)
@@ -184,7 +183,13 @@
   (message "Emacs startup time: %d seconds."
            (time-to-seconds (time-since emacs-load-start-time))))
 
+(use-package benchmark-init
+  :init
+  (benchmark-init/activate)
+  :hook
+  (after-init . benchmark-init/deactivate))
 ;;; Local Variables:
 ;;; no-byte-compile: t
 ;;; End:
 (put 'erase-buffer 'disabled nil)
+

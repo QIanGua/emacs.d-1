@@ -15,7 +15,7 @@
   '(ace-window ; lastest stable is released on year 2014
     auto-package-update
     nov
-    bbdb
+    ;; bbdb
     native-complete
     company-native-complete
     js2-mode ; need new features
@@ -40,7 +40,7 @@
     ;; }}
     iedit
     undo-tree
-    js-doc
+    ;; js-doc
     jss ; remote debugger of browser
     ;; {{ since stable v0.13.0 released, we go back to stable version
     ;; ivy
@@ -51,33 +51,33 @@
     ;; {{ themes in melpa unstable
     ample-theme
     molokai-theme
-    spacemacs-theme
-    leuven-theme
-    sublime-themes
-    tangotango-theme
-    darkburn-theme
-    ujelly-theme
-    afternoon-theme
-    organic-green-theme
-    inkpot-theme
-    flatui-theme
-    hc-zenburn-theme
-    naquadah-theme
-    seti-theme
-    spacegray-theme
-    jazz-theme
-    espresso-theme
-    phoenix-dark-pink-theme
-    tango-plus-theme
-    twilight-theme
-    minimal-theme
-    noctilux-theme
-    soothe-theme
-    heroku-theme
-    hemisu-theme
-    badger-theme
-    distinguished-theme
-    tao-theme
+    ;; spacemacs-theme
+    ;; leuven-theme
+    ;; sublime-themes
+    ;; tangotango-theme
+    ;; darkburn-theme
+    ;; ujelly-theme
+    ;; afternoon-theme
+    ;; organic-green-theme
+    ;; inkpot-theme
+    ;; flatui-theme
+    ;; hc-zenburn-theme
+    ;; naquadah-theme
+    ;; seti-theme
+    ;; spacegray-theme
+    ;; jazz-theme
+    ;; espresso-theme
+    ;; phoenix-dark-pink-theme
+    ;; tango-plus-theme
+    ;; twilight-theme
+    ;; minimal-theme
+    ;; noctilux-theme
+    ;; soothe-theme
+    ;; heroku-theme
+    ;; hemisu-theme
+    ;; badger-theme
+    ;; distinguished-theme
+    ;; tao-theme
     ;; }}
     slime
     groovy-mode

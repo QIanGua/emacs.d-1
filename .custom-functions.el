@@ -274,3 +274,29 @@
   "Select inner WORD."
   (evil-select-inner-object 'evil-WORD beg end type count))
 
+;; (defun my/paste-in-minibuffer ()
+;;   (local-set-key (kbd "M-y") 'paste-from-x-clipboard))
+
+;; (add-hook 'minibuffer-setup-hook 'my/paste-in-minibuffer)
+(defun lazy-M-x ()
+  (interactive)
+  (counsel-M-x (current-word))
+  )
+
+
+(defun hl-then-flush-line ()
+  (interactive)
+  ;; (message "input=%s" (current-word))
+  (hi-lock-line-face-buffer (current-word) "match")
+  ;; y to delete
+  ;; n stop can cancel hl
+  (if (y-or-n-p "Delete all matched lines?")
+      (progn
+        ;; (message "yes")
+        (flush-lines (current-word) (point-min) (point-max))
+        )
+    (progn
+      (unhighlight-regexp t)
+      )
+    )
+  )
