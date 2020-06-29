@@ -114,6 +114,10 @@
   (require-init 'init-elisp t)
   (require-init 'init-yasnippet t)
   (require-init 'init-cc-mode t)
+<<<<<<< HEAD
+  ;; (require-init 'init-gud t)
+=======
+>>>>>>> a9fc3efd843acb7a330bef35ce4da1ede301cf8c
   (require-init 'init-linum-mode)
   (require-init 'init-git t)
   (require-init 'init-gtags t)

@@ -2,6 +2,7 @@
 
 ;; Without this comment emacs25 adds (package-initialize) here
 ;; (package-initialize)
+
 (let* ((minver "25.1"))
   (when (version< emacs-version minver)
     (error "Emacs v%s or higher is required." minver)))
@@ -16,7 +17,6 @@
 (setq gc-cons-threshold most-positive-fixnum)
 
 (setq emacs-load-start-time (current-time))
-
 
 ;; {{ emergency security fix
 ;; https://bugs.debian.org/766397
@@ -57,7 +57,7 @@
 ;; Emacs 25 does gc too frequently
 (when *emacs25*
   ;; (setq garbage-collection-messages t) ; for debug
-  (setq best-gc-cons-threshold (* 63 1024 1024))
+  (setq best-gc-cons-threshold (* 64 1024 1024))
   (setq gc-cons-percentage 0.5)
   (run-with-idle-timer 5 t #'garbage-collect))
 
@@ -69,7 +69,6 @@
   "Load PKG if MAYBE-DISABLED is nil or it's nil but start up in normal slowly."
   (when (or (not maybe-disabled) (not (my-vc-merge-p)))
     (load (file-truename (format "%s/%s" my-lisp-dir pkg)) t t)))
-
 
 (defun local-require (pkg)
   "Require PKG in site-lisp directory."
@@ -89,7 +88,14 @@
 ;; ("\\`/:" . file-name-non-special))
 ;; Which means on every .el and .elc file loaded during start up, it has to runs those regexps against the filename.
 (let* ((file-name-handler-alist nil))
-    
+
+  ;; ;; {{
+  ;; (require 'benchmark-init-modes)
+  ;; (require 'benchmark-init)
+  ;; (benchmark-init/activate)
+  ;; ;; `benchmark-init/show-durations-tree' to show benchmark result
+  ;; ;; }}
+
   (require-init 'init-autoload)
   ;; `package-initialize' takes 35% of startup time
   ;; need check https://github.com/hlissner/doom-emacs/wiki/FAQ#how-is-dooms-startup-so-fast for solution
@@ -119,17 +125,17 @@
   (require-init 'init-gtags t)
   (require-init 'init-clipboard)
   (require-init 'init-ctags t)
-  ;; (require-init 'init-bbdb t)
-  ;; (require-init 'init-gnus t)
-  ;; (require-init 'init-lua-mode t)
+  (require-init 'init-bbdb t)
+  (require-init 'init-gnus t)
+  (require-init 'init-lua-mode t)
   (require-init 'init-workgroups2 t) ; use native API in lightweight mode
   (require-init 'init-term-mode t)
-  ;; (require-init 'init-web-mode t)
+  (require-init 'init-web-mode t)
   (require-init 'init-company t)
   (require-init 'init-chinese t) ;; cannot be idle-required
   ;; need statistics of keyfreq asap
   (require-init 'init-keyfreq t)
-  ;; (require-init 'init-httpd t)
+  (require-init 'init-httpd t)
 
   ;; projectile costs 7% startup time
 
@@ -142,8 +148,8 @@
   ;; handy tools though not must have
   (require-init 'init-misc t)
 
-  ;; (require-init 'init-emacs-w3m t)
-  ;; (require-init 'init-shackle t)
+  (require-init 'init-emacs-w3m t)
+  (require-init 'init-shackle t)
   (require-init 'init-dired t)
   (require-init 'init-writting t)
   (require-init 'init-hydra) ; hotkey is required everywhere
@@ -162,15 +168,14 @@
   (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir))
   (require-init 'init-flymake t)
 
-   (unless (my-vc-merge-p)
-     ;; my personal setup, other major-mode specific setup need it.
-     ;; It's dependent on *.el in `my-site-lisp-dir'
-     (load (expand-file-name "~/.custom.el") t nil)
-     ;; (load (expand-file-name "~/Dotfiles/custom-test.el") t nil)
+  (unless (my-vc-merge-p)
+    ;; my personal setup, other major-mode specific setup need it.
+    ;; It's dependent on *.el in `my-site-lisp-dir'
+    (load (expand-file-name "~/.custom.el") t nil)
 
-     ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
-     ;; See `custom-file' for details.
-     (load (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el"))) t t)))
+    ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
+    ;; See `custom-file' for details.
+    (load (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el"))) t t)))
 
 (setq gc-cons-threshold best-gc-cons-threshold)
 
@@ -178,9 +183,7 @@
   (message "Emacs startup time: %d seconds."
            (time-to-seconds (time-since emacs-load-start-time))))
 
-
 ;;; Local Variables:
 ;;; no-byte-compile: t
 ;;; End:
 (put 'erase-buffer 'disabled nil)
-
