@@ -310,4 +310,10 @@
       (concat (capitalize first-char) rest-str))))
 
 
-
+(defun my/open-message-in-new-window ()
+  (interactive)
+  (split-window-horizontally)
+  (winum-select-window-2)
+  (switch-to-buffer "*Messages*")
+  (winum-select-window-1)
+  )
