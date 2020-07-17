@@ -278,6 +278,7 @@
 ;;   (local-set-key (kbd "M-y") 'paste-from-x-clipboard))
 
 ;; (add-hook 'minibuffer-setup-hook 'my/paste-in-minibuffer)
+
 (defun lazy-M-x ()
   (interactive)
   (counsel-M-x (current-word))
@@ -301,13 +302,13 @@
     )
   )
 
-(defun my/capitalize-first-char (&optional string)
-  "Capitalize only the first character of the input STRING."
-  (interactive)
-  (when (and string (> (length string) 0))
-    (let ((first-char (substring string nil 1))
-          (rest-str   (substring string 1)))
-      (concat (capitalize first-char) rest-str))))
+;; (defun my/capitalize-first-char (&optional string)
+;;   "Capitalize only the first character of the input STRING."
+;;   (interactive)
+;;   (when (and string (> (length string) 0))
+;;     (let ((first-char (substring string nil 1))
+;;           (rest-str   (substring string 1)))
+;;       (concat (capitalize first-char) rest-str))))
 
 
 (defun my/open-message-in-new-window ()
