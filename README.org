@@ -21,6 +21,7 @@
   - [[#methodology][Methodology]]
 - [[#usage][Usage]]
   - [[#quick-start][Quick start]]
+  - [[#get-better-performance][Get better performance]]
   - [[#key-bindings][Key bindings]]
 - [[#faq][FAQ]]
   - [[#locked-packages][Locked packages]]
@@ -173,7 +174,7 @@ Flyspell configuration is actually simple. Aspell uses =ispell-extra-args=. Huns
 
 For hunspell, please read my comment in =init-spelling.el=.
 **** xmlstarlet or xml
-- Required by =flymake= for HTML syntax check.
+- Required by =lazyflymake= for HTML syntax check.
 **** identify from [[http://www.imagemagick.org/][ImageMagick]]
 - Required by =org-mode= to export org file to odt contain images
 **** zip and unzip
@@ -275,7 +276,38 @@ Run =M-x find-file-in-project-by-selected= from =find-file-in-project= to find f
 
 Code auto-completion works out of box by using tags file created by Ctags. You need run =counsel-etags= at least once to fire up Ctags. =company-ctags= from =company-mode= provides the candidates for auto completion. No manual setup is required.
 
-Please [[https://en.wikipedia.org/wiki/Grep][grep]] in the directory =lisp= if you have any further questions on setup.
+Please [[https://en.wikipedia.org/wiki/Grep][grep]] in the directory =~/.emacs.d/lisp= if you have any further questions on setup.
+** Get better performance
+*** Adjust interval of spell check and sytnax check
+This configuration is already optimized for low specification machines on Windows/Linux/macOS.
+
+But you could still squeeze more performance by decreasing the frequency of spell checking and programming syntax check.
+
+The spell check is done by [[https://github.com/redguardtoo/wucuo][wucuo]] which is light weight alternative of =flyspell-mode=.
+
+The programming syntax check is  done by [[https://github.com/redguardtoo/lazyflymake][lazyflymake]] which is light weight alternative of =flymake-mode=.
+
+Insert below code to =~/.custom.el= to increase the interval of check,
+#+begin_src elisp
+(with-eval-after-load 'wucuo
+  ;; 300 seconds
+  (setq wucuo-update-interval 300))
+(with-eval-after-load 'lazyflymake
+  ;; 300 seconds
+  (setq lazyflymake-update-interval 300))
+#+end_src
+*** Why opening file is slow
+Insert below code into =~/.custom.el=, replace "/home/user1/your-file-path" with the file you want to open,
+#+begin_src elisp
+(defun profile-open-file ()
+  (interactive)
+  (profiler-start 'cpu)
+  (find-file "/home/user1/your-file-path")
+  (profiler-report)
+  (profiler-stop))
+#+end_src
+
+Run =M-x profile-open-file= and read the report.
 ** Key bindings
 Don't memorize any key binding. Try =M-x any-command-in-emacs= and hint for its key binding is displayed.
 
