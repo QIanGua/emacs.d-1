@@ -108,6 +108,13 @@
    
 (global-set-key (kbd "C-'") 'then_R_operator)  
 
+(defun equal_latex_operator ()
+  (interactive)
+  (insert " \\!=\\! ")               ; note the space before the first %
+  ;; (reindent-then-newline-and-indent)
+  )
+   
+(global-set-key (kbd "C-=") 'equal_latex_operator)  
 ;; (defun org-export-docx ()
 ;;   (interactive)
 ;;   (let ((docx-file (concat (file-name-sans-extension (buffer-file-name)) ".docx"))
