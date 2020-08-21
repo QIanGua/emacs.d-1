@@ -40,7 +40,12 @@
     ;; }}
     iedit
     undo-tree
+<<<<<<< HEAD
     ;; js-doc
+    jss ; remote debugger of browser
+=======
+    js-doc
+>>>>>>> aaebf9ca54fdcf7544438be02458e8fd65084d6b
     ;; {{ since stable v0.13.0 released, we go back to stable version
     ;; ivy
     ;; counsel
