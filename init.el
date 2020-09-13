@@ -161,16 +161,16 @@
   (setq load-path (cdr load-path))
   (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir))
   (require-init 'init-flymake t)
+    (unless (my-vc-merge-p)
+      ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
+      ;; See `custom-file' for details.
+      (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el")))
+      (if (file-exists-p custom-file) (load custom-file t t))
 
-   (unless (my-vc-merge-p)
-     ;; my personal setup, other major-mode specific setup need it.
-     ;; It's dependent on *.el in `my-site-lisp-dir'
-     (load (expand-file-name "~/.custom.el") t nil)
-     ;; (load (expand-file-name "~/Dotfiles/custom-test.el") t nil)
-
-     ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
-     ;; See `custom-file' for details.
-     (load (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el"))) t t)))
+      ;; my personal setup, other major-mode specific setup need it.
+      ;; It's dependent on *.el in `my-site-lisp-dir'
+      (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
+      (load (expand-file-name "~/Dotfiles/.custom.el") t nil)))
 
 (setq gc-cons-threshold best-gc-cons-threshold)
 
@@ -183,4 +183,3 @@
 ;;; no-byte-compile: t
 ;;; End:
 (put 'erase-buffer 'disabled nil)
-

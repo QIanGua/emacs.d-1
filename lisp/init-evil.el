@@ -625,8 +625,7 @@ If INCLUSIVE is t, the text object is inclusive."
   ;; }}
   "xr" 'rotate-windows
   "xt" 'toggle-two-split-window
-  "uu" 'winner-undo
-  "ur" 'winner-redo
+  "uu" 'my-transient-winner-undo
   "fs" 'ffip-save-ivy-last
   "fr" 'ffip-ivy-resume
   "fc" 'cp-ffip-ivy-last
@@ -924,13 +923,15 @@ If INCLUSIVE is t, the text object is inclusive."
 (define-key evil-normal-state-map "K" 'evil-jump-out-args)
 ;; }}
 
-;; In insert mode, press "fg" in 0.3 second to trigger my-counsel-company
-;; Run "grep fg english-words.txt", got "afghan".
-;; "afgan" is rarely used when programming
-(general-imap "f"
-  (general-key-dispatch 'self-insert-command
-    :timeout 0.3
-    "g" 'my-counsel-company))
+;; ;; In insert mode, press "fg" in 0.3 second to trigger my-counsel-company
+;; ;; Run "grep fg english-words.txt", got "afghan".
+;; ;; "afgan" is rarely used when programming
+;; ;; Insert below code to ~/.custome.el if your really want this feature.
+;; ;; @see https://github.com/redguardtoo/emacs.d/issues/870 first
+;; (general-imap "f"
+;;   (general-key-dispatch 'self-insert-command
+;;     :timeout 0.3
+;;     "g" 'my-counsel-company))
 
 (defun my-switch-to-shell ()
   "Switch to built in or 3rd party shell."
