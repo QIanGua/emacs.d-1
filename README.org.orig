@@ -1,4 +1,14 @@
+<<<<<<< HEAD
  A fast and robust Emacs setup
+  - Fast. Only *one second* to start up
+  - Robust. Never crash after package upgrade. Packages could be installed without network
+  - Support Windows. You can find&grep files on Windows with minimum setup
+  - Tested with Emacs 25.3, 26.3, 27.1, 28 on Linux/Windows/Cygwin/macOS/WSL(Windows Subsystem for Linux)
+  - Emacs vanilla key bindings and directory layout is respected
+  - Usable in [[https://packages.debian.org/emacs-nox][emacs-nox]] and works in [[http://www.putty.org/][PuTTY]]
+=======
+* A fast and robust Emacs setup
+>>>>>>> 6adb0262f2a84a3d74d9142114486afd84de313d
 
 [[https://travis-ci.org/redguardtoo/emacs.d][https://travis-ci.org/redguardtoo/emacs.d.svg?branch=master]]
 

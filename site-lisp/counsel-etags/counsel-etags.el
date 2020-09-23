@@ -4,7 +4,7 @@
 
 ;; Author: Chen Bin <chenbin dot sh AT gmail dot com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Requires: ((counsel "0.13.0"))
+;; Package-Requires: ((emacs "25.1") (counsel "0.13.0"))
 ;; Keywords: tools, convenience
 ;; Version: 1.9.14
 
@@ -711,7 +711,6 @@ If it's Emacs etags return nil."
 (defun counsel-etags-ctags-options-file-cli (program)
   "Use PROGRAM to create cli for `counsel-etags-ctags-options-file'."
   (let* (str
-         langs
          (exuberant-ctags-p (counsel-etags-is-exuberant-ctags program)))
     (cond
      ;; Don't use any configuration file at all
@@ -893,7 +892,6 @@ HASH store the previous distance."
              (d (make-vector (* (1+ length-str1) (1+ length-str2)) 0))
              ;; d is a table with lenStr2+1 rows and lenStr1+1 columns
              (row-width (1+ length-str1))
-             (rlt 0)
              (i 0)
              (j 0))
         ;; i and j are used to iterate over str1 and str2
@@ -1053,11 +1051,15 @@ CONTEXT is extra information collected before find tag definition."
          cands
          file-size
          file-content)
+    (when counsel-etags-debug
+      (message "counsel-etags-extract-cands called. tags-file=%s cached-file-size=%s tags-file-size=%s"
+               tags-file
+               (counsel-etags-cache-filesize tags-file)
+               (nth 7 (file-attributes tags-file))))
     ;; ONLY when the checksum (file size) is different from the physical file size,
     ;; update cache by reading from physical file.
     ;; Not precise but acceptable algorithm.
-    (when (and tags-file
-               (file-exists-p tags-file)
+    (when (and tags-file (file-exists-p tags-file)
                ;; TAGS file is smaller when being created.
                ;; Do NOT load incomplete tags file
                (< (counsel-etags-cache-filesize tags-file)
@@ -1073,7 +1075,7 @@ CONTEXT is extra information collected before find tag definition."
 
     ;; Get better performance by scan from beginning to end.
     (when counsel-etags-debug
-      (message "tags-file=%s tagname=%s" tags-file tagname))
+      (message "counsel-etags-extract-cands called. tags-file=%s tagname=%s" tags-file tagname))
 
     (when (and tags-file
                (setq file-content (counsel-etags-cache-content tags-file)))
@@ -1103,11 +1105,15 @@ CONTEXT is extra information collected before find tag definition."
                                                             fuzzy
                                                             context))))
 
+    (when counsel-etags-debug
+      (message "counsel-etags-collect-cands called. tags-file=%s cands=%s" tags-file cands))
     ;; current-file is used to calculated string distance.
     (setq rlt (mapcar 'car (counsel-etags-sort-candidates-maybe cands 3 nil current-file)))
     (when counsel-etags-extra-tags-files
       ;; don't sort candidate from 3rd party libraries
       (dolist (file (ff-list-replace-env-vars counsel-etags-extra-tags-files))
+        (when counsel-etags-debug
+          (message "load %s in %s" file counsel-etags-extra-tags-files))
         (when (setq cands (counsel-etags-extract-cands file
                                                        tagname
                                                        fuzzy
@@ -1222,8 +1228,9 @@ Focus on TAGNAME if it's not nil."
             time-passed
             (if (<= time-passed 2) "" "s"))))
 
-(defun counsel-etags-open-tag-cand (tagname cands time)
-  "Find TAGNAME from CANDS.  Open tags file at TIME."
+(defun counsel-etags-open-tag-cand (tagname cands time &optional show-tagname-p)
+  "Find TAGNAME from CANDS.  Open tags file at TIME.
+If SHOW-TAGNAME-P is t, show the tag name in minibuffer."
   ;; mark current point for `pop-tag-mark'
   (let* ((dir (counsel-etags-tags-file-directory)))
     (cond
@@ -1242,6 +1249,7 @@ Focus on TAGNAME if it's not nil."
                            (counsel-etags-open-file-api e
                                                         ,dir
                                                         ,tagname))
+                :initial-input (if show-tagname-p tagname)
                 :caller 'counsel-etags-find-tag
                 :keymap counsel-etags-find-tag-map)))))
 
@@ -1355,12 +1363,14 @@ Tags might be sorted by comparing tag's path with CURRENT-FILE."
       (setq counsel-etags-find-tag-candidates rlt)
       rlt))))
 
-(defun counsel-etags-find-tag-api (tagname fuzzy current-file &optional context)
+(defun counsel-etags-find-tag-api (tagname fuzzy current-file &optional context show-tagname-p)
   "Find TAGNAME using FUZZY algorithm from CURRENT-FILE.
-CONTEXT is extra information collected before finding tag definition."
+CONTEXT is extra information collected before finding tag definition.
+If SHOW-TAGNAME-P is t, show the tag name in the minibuffer."
   (let* ((time (current-time))
-         (dir (file-local-name (counsel-etags-tags-file-directory)))
+         (dir (counsel-etags-tags-file-directory))
          (current-file (file-local-name current-file)))
+    (if dir (setq dir (file-local-name dir)))
     (when counsel-etags-debug
       (message "counsel-etags-find-tag-api called => tagname=%s fuzzy=%s dir%s current-file=%s context=%s"
                tagname
@@ -1370,6 +1380,8 @@ CONTEXT is extra information collected before finding tag definition."
                context))
     ;; Dir could be nil. User could use `counsel-etags-extra-tags-files' instead
     (cond
+     ((not dir)
+      (message "Tags file is not ready yet."))
      ((not tagname)
       ;; OK, need use ivy-read to find candidate
       (ivy-read "Fuzz matching tags:"
@@ -1392,7 +1404,7 @@ CONTEXT is extra information collected before finding tag definition."
 
      (t
       ;; open the one selected candidate
-      (counsel-etags-open-tag-cand tagname counsel-etags-find-tag-candidates time)))))
+      (counsel-etags-open-tag-cand tagname counsel-etags-find-tag-candidates time show-tagname-p)))))
 
 (defun counsel-etags-imenu-scan-string (output)
   "Extract imenu items from OUTPUT."
@@ -1534,6 +1546,10 @@ The tags updating might not happen."
                    (file-name-directory buffer-file-name)))
          (tags-file (and counsel-etags-tags-file-history
                          (car counsel-etags-tags-file-history))))
+
+    (when counsel-etags-debug
+      (message "counsel-etags-virtual-update-tags called. dir=%s tags-file=%s" dir tags-file))
+
     (when (and dir
                tags-file
                (string-match-p (file-name-directory (file-truename tags-file))
@@ -1550,8 +1566,8 @@ The tags updating might not happen."
 
        (t
         (setq counsel-etags-timer (current-time))
-        (let* ((tags-file (counsel-etags-locate-tags-file))
-               (dir (file-name-directory (file-truename tags-file))))
+        (let* ((dir (file-name-directory (file-truename (counsel-etags-locate-tags-file)))))
+          (if counsel-etags-debug (message "update tags in %s" dir))
           (funcall counsel-etags-update-tags-backend dir)))))))
 
 (defun counsel-etags-unquote-regex-parens (str)
@@ -1658,13 +1674,14 @@ Extended regex is used, like (pattern1|pattern2)."
   (file-name-as-directory (file-name-base (directory-file-name directory))))
 
 ;;;###autoload
-(defun counsel-etags-grep (&optional default-keyword hint root)
+(defun counsel-etags-grep (&optional default-keyword hint root show-keyword-p)
   "Grep at project root directory or current directory.
 Try to find best grep program (ripgrep, grep...) automatically.
 Extended regex like (pattern1|pattern2) is used.
 If DEFAULT-KEYWORD is not nil, it's used as grep keyword.
 If HINT is not nil, it's used as grep hint.
-ROOT is root directory to grep."
+ROOT is root directory to grep.
+If SHOW-KEYWORD-P is t, show the keyword in the minibuffer."
   (interactive)
   (let* ((text (if default-keyword default-keyword
                   (counsel-etags-read-keyword "Regular expression for grep: ")))
@@ -1714,6 +1731,7 @@ ROOT is root directory to grep."
                          (counsel-etags-open-file-api item
                                                       ,default-directory
                                                       ,keyword))
+              :initial-input (if show-keyword-p keyword)
               :caller 'counsel-etags-grep)))
 
 ;;;###autoload
