@@ -24,14 +24,27 @@
 ;; along with this program; if not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;  Remove "(flymake-mode 1)" from ~/.emacs and insert below line instead,
 ;;
+;; One line to set up flymake and start flymake-mode,
 ;;    (add-hook 'prog-mode-hook #'lazyflymake-start)
 ;;
-;; Errors are reported after saving current file.
-;; Use `flymake-goto-next-error', `flymake-goto-prev-error' to locate errors.
+;; By default, flymake-mode is turned on in `lazyflymake-start'.
+;; You could keep using all the commands from flymake.
 ;;
-;; Please note this program also set up flymake for Shell script, Emacs Lisp,
+;; This program also provides below commands to locate errors/warnings:
+;; - `lazyflymake-goto-next-error'
+;; - `lazyflymake-goto-prev-error'
+;;
+;; There is also a light weight mode which does not use flymake-mode.
+;; Enable it by insert extra one line set up,
+;;
+;;   (setq lazyflymake-flymake-mode-on nil)
+;;
+;; So flymake-mode is not turned on by `lazyflymake-start' automatically.
+;; The syntax check happens if and only if current buffer is saved.
+;; Extra command `lazyflymake-list-errors' is provided in light weight mode.
+;;
+;; This program also sets up flymake for Shell script, Emacs Lisp,
 ;; and Lua automatically.
 ;;
 ;; Shellcheck (https://github.com/koalaman/shellcheck) is required to check
@@ -62,7 +75,7 @@ is used when current file is saved."
   :group 'lazyflymake
   :type '(repeat 'sexp))
 
-(defcustom lazyflymake-file-match-algorithm "strict"
+(defcustom lazyflymake-file-match-algorithm nil
   "The algorithm to match file name.
 If it's \"string\", the full path of file should be same as current code file.
 If it's nil, do not check file at all."
@@ -82,6 +95,10 @@ If it's nil, do not check file at all."
 (defvar lazyflymake-start-check-now nil
   "If it's t, `lazyflymake-start' starts buffer syntax check immediately.
 This variable is for debug and unit test only.")
+
+(defvar lazyflymake-process-name
+  "lazyflymake-proc"
+  "Name of the running process")
 
 ;;;###autoload
 (defun lazyflymake-new-flymake-p ()
@@ -197,7 +214,7 @@ If FORCE is t, the existing set up in `flymake-allowed-file-name-masks' is repla
     ov))
 
 (defun lazyflymake-current-file-p (file)
-  "FILE does match `buffer-file-name'."
+  "FILE does match current buffer's path."
 
   ;; algorithms to match file
   ;; - exactly same as full path name or at least file name is same
@@ -226,14 +243,16 @@ If FORCE is t, the existing set up in `flymake-allowed-file-name-masks' is repla
       (setq output (replace-regexp-in-string "^:elisp-flymake-output-start[\r\n]*" "" output))
       (unless (string= "" output)
         (let* ((original-errors (read output)))
-          (setq errors (mapcar (lambda (e)
-                                 (list buffer-file-name
-                                       (nth 1 e)
-                                       (save-excursion
-                                         (goto-char (nth 1 e))
-                                         (line-end-position))
-                                       (nth 0 e)))
-                               original-errors)))))
+          ;; (read output) may fail
+          (when (listp original-errors)
+            (setq errors (mapcar (lambda (e)
+                                   (list buffer-file-name
+                                         (nth 1 e)
+                                         (save-excursion
+                                           (goto-char (nth 1 e))
+                                           (line-end-position))
+                                         (nth 0 e)))
+                                 original-errors))))))
      (t
       ;; extract syntax errors
       (dolist (l (split-string output "[\r\n]+"  t "[ \t]+"))
@@ -254,10 +273,35 @@ If FORCE is t, the existing set up in `flymake-allowed-file-name-masks' is repla
           (when (or (lazyflymake-current-file-p file)
                     (eq major-mode 'emacs-lisp-mode))
             (push (lazyflymake-make-overlay err) ovs))))
-      ;; remove overlay without binding buffer
-      (setq ovs (cl-remove-if (lambda (ov) (not (overlay-start ov))) ovs))
       (setq lazyflymake-overlays
-            (sort ovs (lambda (a b) (< (overlay-start a) (overlay-start b))))))))
+            (lazyflymake-sdk-valid-overlays ovs)))))
+
+(defun lazyflymake-overlay-to-string (overlay)
+  "Format OVERLAY to string."
+  (let* ((line (count-lines (point-min) (overlay-start overlay)))
+         (err-text (overlay-get overlay 'help-echo)))
+    (format "line %s: %s" line err-text)))
+
+(defun lazyflymake-list-errors ()
+  "List errors in current buffer."
+  (interactive)
+  (let* (ovs)
+    (cond
+     (lazyflymake-flymake-mode-on
+      (lazyflymake-sdk-hint))
+
+     ((not (setq ovs (lazyflymake-sdk-valid-overlays lazyflymake-overlays)))
+      (message "No error found."))
+
+     (t
+      (let* ((cands (mapcar (lambda (o)
+                              (cons (lazyflymake-overlay-to-string o) o))
+                            ovs))
+             (err (completing-read "Go to: " cands))
+             ov)
+        (when err
+          (setq ov (cdr (assoc err cands)))
+          (lazyflymake-goto-overlay-center ov)))))))
 
 (defun lazyflymake-proc-output (process)
   "The output of PROCESS."
@@ -270,29 +314,54 @@ If FORCE is t, the existing set up in `flymake-allowed-file-name-masks' is repla
   (let* ((status (process-status process)))
     (when (memq status '(exit signal))
       (let* ((errors (lazyflymake-extract-errors (lazyflymake-proc-output process))))
-        (lazyflymake-show-errors errors)))))
+        (lazyflymake-show-errors errors)
+        (when (and lazyflymake-temp-source-file-name
+                   (file-exists-p lazyflymake-temp-source-file-name))
+          (let* ((backend (lazyflymake-find-backend))
+                 (cleanup-fn (or (nth 2 backend) 'flymake-simple-cleanup))
+                 (flymake-proc--temp-source-file-name lazyflymake-temp-source-file-name))
+            (funcall cleanup-fn)))))))
+
+(defun lazyflymake-run-program (program args buffer)
+  "Run PROGRAM with ARGS and output to BUFFER.
+Return the running process."
+  (let* ((proc (apply 'start-file-process lazyflymake-process-name buffer program args)))
+    ;; maybe the temporary source file is already deleted
+    (when (not (and lazyflymake-temp-source-file-name
+                    (file-exists-p lazyflymake-temp-source-file-name)))
+      (setq lazyflymake-temp-source-file-name nil))
+
+    ;; For flymake-mode, I don't use this `process-put' trick
+    (when lazyflymake-temp-source-file-name
+      (process-put proc
+                   'flymake-proc--temp-source-file-name
+                   lazyflymake-temp-source-file-name))
+    proc))
+
+(defun lazyflymake-find-backend ()
+  "Find backend."
+  (cl-find-if (lambda (m)
+                (string-match (car m) buffer-file-name))
+              flymake-allowed-file-name-masks))
 
 (defun lazyflymake-start-buffer-checking-process ()
   "Check current buffer right now."
-  (let* ((backend (cl-find-if (lambda (m)
-                                (string-match (car m) buffer-file-name))
-                              flymake-allowed-file-name-masks)))
+  (let* ((backend (lazyflymake-find-backend))
+         (proc (get-process lazyflymake-process-name)))
     (when (and backend
-               ;; only when syntax checking process should be running
-               (memq (process-status "lazyflymake-proc") '(nil exit signal)))
+               ;; the previous check process should stopped
+               (not proc))
       (unwind-protect
-          (let* ((flymake-proc--temp-source-file-name nil)
-                 (init-fn (nth 1 backend))
+          (let* ((init-fn (nth 1 backend))
                  (cmd-and-args (funcall init-fn))
                  (program (car cmd-and-args))
                  (args (nth 1 cmd-and-args))
                  (buf (lazyflymake-proc-buffer t))
-                 (proc (apply 'start-file-process "lazyflymake-proc" buf program args)))
+                 (proc (lazyflymake-run-program program args buf)))
             (lazyflymake-clear-errors)
-            (when flymake-proc--temp-source-file-name
-              (process-put proc 'flymake-proc--temp-source-file-name flymake-proc--temp-source-file-name))
             (set-process-sentinel proc #'lazyflymake-proc-report)
 
+            ;; check emacs lisp code doc in another process
             (when (and (eq major-mode 'emacs-lisp-mode)
                        (fboundp 'elisp-flymake-checkdoc))
               (elisp-flymake-checkdoc (lambda (diags)

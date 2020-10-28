@@ -1,11 +1,25 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
 
 (defun my-initialize-package ()
-  (unless nil ;package--initialized
-    ;; optimization, no need to activate all the packages so early
-    (setq package-enable-at-startup nil)
+  ;; optimization, no need to activate all the packages so early
+  (setq package-enable-at-startup nil)
+  (cond
+   (*emacs27*
+    ;; you still need run `M-x package-quickstart-refresh' at least once
+    ;; to generate a big file containing `autoload' statements
+    (setq package-quick-start t)
+
+    ;; esup need call `package-initialize'
+    ;; @see https://github.com/jschaf/esup/issues/84
+    (when (or (featurep 'esup-child)
+              (fboundp 'profile-dotemacs)
+              (not (file-exists-p (concat my-emacs-d "elpa")))
+              (my-vc-merge-p)
+              noninteractive)
+      (package-initialize)))
+   (t
     ;; @see https://www.gnu.org/software/emacs/news/NEWS.27.1
-    (package-initialize)))
+    (package-initialize))))
 
 (my-initialize-package)
 
@@ -13,19 +27,18 @@
 ;; Please add the package name into `melpa-include-packages'
 ;; if it's not visible after  `list-packages'.
 (defvar melpa-include-packages
-  '(ace-window ; lastest stable is released on year 2014
+  '(ace-window ; latest stable is released on year 2014
     auto-package-update
     nov
     ;; bbdb
+    esup ; Emacs start up profiler
     native-complete
     company-native-complete
     js2-mode ; need new features
     git-timemachine ; stable version is broken when git rename file
-    evil-textobj-syntax
     undo-fu
     command-log-mode
     ;; lsp-mode ; stable version has performance issue, but unstable version sends too many warnings
-    edit-server ; use Emacs to edit textarea in browser, need browser addon
     vimrc-mode
     rjsx-mode ; fixed the indent issue in jsx
     package-lint ; for melpa pull request only
@@ -81,7 +94,6 @@
     groovy-mode
     company ; I won't wait another 2 years for stable
     simple-httpd
-    dsvn
     findr
     mwe-log-commands
     noflet
@@ -215,7 +227,6 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 (require-package 'avy)
 (require-package 'popup) ; some old package need it
 (require-package 'auto-yasnippet)
-(require-package 'ace-link)
 (require-package 'csv-mode)
 (require-package 'expand-region) ; I prefer stable version
 (require-package 'fringe-helper)
@@ -245,7 +256,6 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 (require-package 'scratch)
 (require-package 'rainbow-delimiters)
 (require-package 'textile-mode)
-(require-package 'dsvn)
 (require-package 'git-timemachine)
 (require-package 'exec-path-from-shell)
 (require-package 'ivy)
@@ -253,7 +263,6 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 (require-package 'counsel) ; counsel => swiper => ivy
 (require-package 'find-file-in-project)
 (require-package 'counsel-bbdb)
-(require-package 'ibuffer-vc)
 (require-package 'command-log-mode)
 (require-package 'regex-tool)
 (require-package 'groovy-mode)
@@ -307,8 +316,6 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 (require-package 'evil-nerd-commenter)
 (require-package 'evil-surround)
 (require-package 'evil-visualstar)
-(require-package 'evil-args)
-(require-package 'evil-textobj-syntax)
 (require-package 'undo-fu)
 (require-package 'counsel-css)
 (require-package 'auto-package-update)
@@ -323,14 +330,13 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 (require-package 'vimrc-mode)
 (require-package 'nov) ; read epub
 (require-package 'rust-mode)
-(require-package 'benchmark-init)
 ;; (require-package 'langtool) ; my own patched version is better
 (require-package 'typescript-mode)
-(require-package 'edit-server)
 ;; run "M-x pdf-tool-install" at debian and open pdf in GUI Emacs
 (require-package 'pdf-tools)
 (require-package 'pyim)
 (require-package 'pyim-wbdict) ; someone may use wubi IME, not me
+(require-package 'esup)
 
 ;; {{ Fixed expiring GNU ELPA keys
 ;; GNU ELPA GPG key will expire on Sep-2019. So we need install this package to
@@ -350,6 +356,7 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
     (require-package theme)))
 
 (require-package 'magit)
+(require-package 'which-key)
 
 ;; most popular 100 themes
 (my-install-popular-themes

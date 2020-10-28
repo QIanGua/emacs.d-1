@@ -9,16 +9,19 @@
 (setq user-init-file (or load-file-name (buffer-file-name)))
 (setq user-emacs-directory (file-name-directory user-init-file))
 
-(defvar best-gc-cons-threshold
-  4000000
-  "Best default gc threshold value.  Should NOT be too big!")
-
 (defvar my-debug nil "Enable debug mode.")
 
-;; don't GC during startup to save time
-(setq gc-cons-threshold most-positive-fixnum)
+(setq *is-a-mac* (eq system-type 'darwin))
+(setq *win64* (eq system-type 'windows-nt))
+(setq *cygwin* (eq system-type 'cygwin) )
+(setq *linux* (or (eq system-type 'gnu/linux) (eq system-type 'linux)) )
+(setq *unix* (or *linux* (eq system-type 'usg-unix-v) (eq system-type 'berkeley-unix)) )
+(setq *emacs26* (>= emacs-major-version 26))
+(setq *emacs27* (>= emacs-major-version 27))
 
-(setq emacs-load-start-time (current-time))
+;; don't GC during startup to save time
+(setq gc-cons-percentage 0.6)
+(setq gc-cons-threshold most-positive-fixnum)
 
 
 ;; {{ emergency security fix
@@ -27,15 +30,7 @@
   (defun enriched-decode-display-prop (start end &optional param)
     (list start end)))
 ;; }}
-;;----------------------------------------------------------------------------
-;; Which functionality to enable (use t or nil for true and false)
-;;----------------------------------------------------------------------------
-(setq *is-a-mac* (eq system-type 'darwin))
-(setq *win64* (eq system-type 'windows-nt))
-(setq *cygwin* (eq system-type 'cygwin) )
-(setq *linux* (or (eq system-type 'gnu/linux) (eq system-type 'linux)) )
-(setq *unix* (or *linux* (eq system-type 'usg-unix-v) (eq system-type 'berkeley-unix)) )
-(setq *emacs26* (>= emacs-major-version 26))
+
 (setq *no-memory* (cond
                    (*is-a-mac*
                     ;; @see https://discussions.apple.com/thread/1753088
@@ -54,13 +49,6 @@
 (defconst my-lisp-dir (concat my-emacs-d "lisp")
   "Directory of lisp.")
 
-;; @see https://www.reddit.com/r/emacs/comments/55ork0/is_emacs_251_noticeably_slower_than_245_on_windows/
-;; Emacs 25 does gc too frequently
-;; (setq garbage-collection-messages t) ; for debug
-(setq best-gc-cons-threshold (* 64 1024 1024))
-(setq gc-cons-percentage 0.5)
-(run-with-idle-timer 5 t #'garbage-collect)
-
 (defun my-vc-merge-p ()
   "Use Emacs for git merge only?"
   (boundp 'startup-now))
@@ -70,17 +58,6 @@
   (when (or (not maybe-disabled) (not (my-vc-merge-p)))
     (load (file-truename (format "%s/%s" my-lisp-dir pkg)) t t)))
 
-
-(defun local-require (pkg)
-  "Require PKG in site-lisp directory."
-  (unless (featurep pkg)
-    (load (expand-file-name
-           (cond
-            ((eq pkg 'go-mode-load)
-             (format "%s/go-mode/%s" my-site-lisp-dir pkg))
-            (t
-             (format "%s/%s/%s" my-site-lisp-dir pkg pkg))))
-          t t)))
 
 (defun my-add-subdirs-to-load-path (lisp-dir)
   "Add sub-directories under LISP-DIR into `load-path'."
@@ -184,12 +161,17 @@
       (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
       (load (expand-file-name "~/Dotfiles/.custom.el") t nil)))
 
-(setq gc-cons-threshold best-gc-cons-threshold)
 
-(when (require 'time-date nil t)
-  (message "Emacs startup time: %d seconds."
-           (time-to-seconds (time-since emacs-load-start-time))))
+;; @see https://www.reddit.com/r/emacs/comments/55ork0/is_emacs_251_noticeably_slower_than_245_on_windows/
+;; Emacs 25 does gc too frequently
+;; (setq garbage-collection-messages t) ; for debug
+(defun my-cleanup-gc ()
+  "Clean up gc."
+  (setq gc-cons-threshold  67108864) ; 64M
+  (setq gc-cons-percentage 0.1) ; original value
+  (garbage-collect))
 
+(run-with-idle-timer 4 nil #'my-cleanup-gc)
 
 ;;; Local Variables:
 ;;; no-byte-compile: t
