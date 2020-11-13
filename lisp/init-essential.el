@@ -29,115 +29,12 @@
    ((= n 5)
     ;; grep Chinese using pinyinlib.
     ;; In ivy filter, trigger key must be pressed before filter chinese
-    (my-ensure 'pinyinlib)
     (let* ((counsel-etags-convert-grep-keyword
             (lambda (keyword)
               (if (and keyword (> (length keyword) 0))
-                  (pinyinlib-build-regexp-string keyword t)
+                  (my-pinyinlib-build-regexp-string keyword)
                 keyword))))
       (counsel-etags-grep)))))
-
-;; {{ message buffer things
-(defun my-search-backward-prompt (n)
-  "Search backward for N prompt.
-Return the line beginning of prompt line."
-  (let* (rlt
-         (first-line-end-pos (save-excursion
-                               (goto-char (point-min))
-                               (line-end-position))))
-    (save-excursion
-      (while (and (> (line-beginning-position) first-line-end-pos)
-                  (> n 0))
-        (when (evilmi-prompt-line-p)
-          (setq n (1- n))
-          (setq rlt (line-beginning-position)))
-        (forward-line -1)))
-    rlt))
-
-(defun my-erase-one-visible-buffer (buf-name &optional n)
-  "Erase the content of visible buffer with BUF-NAME.
-Keep latest N cli program output if it's not nil."
-  (let* ((original-window (get-buffer-window))
-         (target-window (get-buffer-window buf-name))
-         beg)
-    (cond
-     ((not target-window)
-      (message "Buffer %s is not visible!" buf-name))
-     (t
-      (select-window target-window)
-      (let* ((inhibit-read-only t))
-        (my-ensure 'evil-matchit-terminal)
-        (when (and n (> n 0) (fboundp 'evilmi-prompt-line-p))
-          ;; skip current prompt line
-          (forward-line -2)
-          (setq beg (my-search-backward-prompt n)))
-        (cond
-         (beg
-          (delete-region (point-min) beg))
-         (t
-          (erase-buffer))))
-      (select-window original-window)))))
-
-(defun my-erase-visible-buffer (&optional n)
-  "Erase the content of the *Messages* buffer.
-N specifies the buffer to erase."
-  (interactive "P")
-  (cond
-   ((null n)
-    (my-erase-one-visible-buffer "*Messages*"))
-
-   ((eq 1 n)
-    (my-erase-one-visible-buffer "*shell*"))
-
-   ((eq 2 n)
-    (my-erase-one-visible-buffer "*Javascript REPL*"))
-
-   ((eq 3 n)
-    (my-erase-one-visible-buffer "*eshell*"))))
-
-(defun my-all-windows ()
-  "Return all windows."
-  (cl-mapcan (lambda (f)
-               (window-list f 0 (frame-first-window f)))
-             (visible-frame-list)))
-
-(defvar my-after-check-errors-of-other-windows-function nil)
-
-(defun my-erase-comint-shell-buffer ()
-  "Kill running sub-process and Erase shell buffer."
-  (interactive)
-  (cond
-   ;; erase buffer, check errors in other window and insert certain command
-   ((derived-mode-p 'comint-mode)
-    ;; loop all sub-windows.
-    ;; if no error, run `my-after-check-errors-of-other-windows-function'
-    (let* ((orig-w (get-buffer-window))
-           (wins (my-all-windows))
-           err-wins)
-      (dolist (w wins)
-        (select-window w)
-        (when (and (eq major-mode 'js2-mode)
-                   (> (length (js2-errors)) 0))
-          (push (buffer-name) err-wins)))
-      ;; back to original window
-      (select-window orig-w)
-
-      (comint-interrupt-subjob)
-      ;; wait 2 seconds
-      (sit-for 2)
-      (my-erase-one-visible-buffer (buffer-name (current-buffer)))
-      (goto-char (point-max))
-
-      (cond
-       (err-wins
-        (message "Code syntax error in windows %s"
-                 (mapconcat 'identity err-wins " ")))
-       (my-after-check-errors-of-other-windows-function
-        (funcall my-after-check-errors-of-other-windows-function)))))
-
-   (t
-    (message "Can't erase buffer in %s" major-mode))))
-;; }}
 
 ;; {{ narrow region
 (defun narrow-to-region-indirect-buffer-maybe (start end use-indirect-buffer)
@@ -284,10 +181,24 @@ If OTHER-SOURCE is 2, get keyword from `kill-ring'."
     (scroll-bar-mode -1)
     (tool-bar-mode -1)
     (horizontal-scroll-bar-mode -1)))
-(run-with-idle-timer 2 nil #'my-mini-ui)
+(my-run-with-idle-timer 2 #'my-mini-ui)
 ;; }}
 
 ;; no menu bar
 (menu-bar-mode -1)
+
+;; Nicer naming of buffers for files with identical names
+(setq uniquify-buffer-name-style 'reverse)
+(setq uniquify-separator " • ")
+(setq uniquify-after-kill-buffer-p t)
+(setq uniquify-ignore-buffers-re "^\\*")
+
+(setq hippie-expand-try-functions-list
+      '(try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-dabbrev
+        try-expand-dabbrev-all-buffers
+        try-expand-dabbrev-from-kill))
+(global-set-key (kbd "M-/") 'hippie-expand)
 
 (provide 'init-essential)

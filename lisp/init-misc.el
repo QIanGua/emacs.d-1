@@ -222,7 +222,7 @@ This function can be re-used by other major modes after compilation."
 ;; from RobinH, Time management
 (setq display-time-24hr-format t) ; the date in modeline is English too, magic!
 (setq display-time-day-and-date t)
-(run-with-idle-timer 2 nil #'display-time)
+(my-run-with-idle-timer 2 #'display-time)
 ;; }}
 
 ;;a no-op function to bind to if you want to set a keystroke to null
@@ -499,7 +499,6 @@ If no region is selected, `kill-ring' or clipboard is used instead."
   "Extract package list from package.json."
   (interactive)
   (let* ((str (my-use-selected-string-or-ask)))
-    (message "my-select-cliphist-item called => %s" str)
     (setq str (replace-regexp-in-string ":.*$\\|\"" "" str))
     ;; join lines
     (setq str (replace-regexp-in-string "[\r\n \t]+" " " str))
@@ -528,12 +527,22 @@ If no region is selected, `kill-ring' or clipboard is used instead."
   (setq indent-tabs-mode (not indent-tabs-mode))
   (message "indent-tabs-mode=%s" indent-tabs-mode))
 
+(defvar my-auto-save-exclude-major-mode-list
+  '(message-mode)
+  "The major modes where auto-save is disabled.")
+
 ;; {{ auto-save.el
-(local-require 'auto-save)
-(add-to-list 'auto-save-exclude 'file-too-big-p t)
-(setq auto-save-idle 2) ; 2 seconds
-(auto-save-enable)
-(setq auto-save-slient t)
+(defun my-check-major-mode-for-auto-save (file)
+  "Check current major mode of FILE for auto save."
+  (ignore file)
+  (memq major-mode my-auto-save-exclude-major-mode-list))
+
+(with-eval-after-load 'auto-save
+  (push 'my-file-too-big-p auto-save-exclude)
+  (push 'my-check-major-mode-for-auto-save auto-save-exclude)
+  (setq auto-save-idle 2) ; 2 seconds
+  (setq auto-save-slient t))
+(my-run-with-idle-timer 4 #'auto-save-enable)
 ;; }}
 
 ;; {{ csv
@@ -667,8 +676,7 @@ If no region is selected, `kill-ring' or clipboard is used instead."
 ;; }}
 
 ;; {{
-(local-require 'typewriter-mode)
-(defun toggle-typewriter ()
+(defun my-toggle-typewriter ()
   "Turn on/off typewriter."
   (interactive)
   (if (bound-and-true-p typewriter-mode)
@@ -808,7 +816,7 @@ If the shell is already opened in some buffer, switch to that buffer."
   ;; So no auto-revert-mode on Windows/Cygwin
   (setq global-auto-revert-non-file-buffers t
         auto-revert-verbose nil)
-  (run-with-idle-timer 4 nil #'global-auto-revert-mode))
+  (my-run-with-idle-timer 4 #'global-auto-revert-mode))
 
 ;;----------------------------------------------------------------------------
 ;; Don't disable narrowing commands
@@ -942,7 +950,7 @@ version control automatically."
 (put 'upcase-region 'disabled nil)
 
 ;; midnight mode purges buffers which haven't been displayed in 3 days
-(run-with-idle-timer 4 nil #'midnight-mode)
+(my-run-with-idle-timer 4 #'midnight-mode)
 
 (defun cleanup-buffer-safe ()
   "Perform a bunch of safe operations on the whitespace content of a buffer.
@@ -1020,7 +1028,7 @@ might be bad."
 ;; {{ which-key-mode
 (setq which-key-allow-imprecise-window-fit t) ; performance
 (setq which-key-separator ":")
-(run-with-idle-timer 2 nil #'which-key-mode)
+(my-run-with-idle-timer 2 #'which-key-mode)
 ;; }}
 
 ;; {{ Answer Yes/No programmically when asked by `y-or-n-p'
@@ -1118,7 +1126,7 @@ See https://github.com/RafayGhafoor/Subscene-Subtitle-Grabber."
 (when (and window-system (memq window-system '(mac ns)))
   ;; @see https://github.com/purcell/exec-path-from-shell/issues/75
   ;; I don't use those exec path anyway.
-  (run-with-idle-timer 4 nil #'exec-path-from-shell-initialize))
+  (my-run-with-idle-timer 4 #'exec-path-from-shell-initialize))
 ;; }}
 
 (provide 'init-misc)
