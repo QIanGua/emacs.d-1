@@ -117,7 +117,10 @@
 (global-set-key (kbd "M-x") 'counsel-M-x)
 (global-set-key (kbd "C-x C-m") 'counsel-M-x)
 
-(defvar my-do-bury-compilation-buffer t
+;; hide the compilation buffer automatically is not a good idea.
+;; if compiling command is a unit test command
+;; It's better let user decide when to hide something
+(defvar my-do-bury-compilation-buffer nil
   "Hide compilation buffer if compile successfully.")
 
 (defun compilation-finish-hide-buffer-on-success (buffer str)
@@ -292,7 +295,7 @@ This function can be re-used by other major modes after compilation."
   "Return current function name."
   ;; @see http://stackoverflow.com/questions/13426564/how-to-force-a-rescan-in-imenu-by-a-function
   ;; clean the imenu cache
-  (my-imenu-items (if (my-use-tags-as-imenu-function-p)
+  (my-rescan-imenu-items (if (my-use-tags-as-imenu-function-p)
                       'counsel-etags-imenu-default-create-index-function
                     imenu-create-index-function))
   (which-function))
@@ -738,6 +741,7 @@ ARG is ignored."
                                 file-name-history
                                 search-ring
                                 regexp-search-ring))
+(setq session-save-file-coding-system 'utf-8)
 (add-hook 'after-init-hook 'session-initialize)
 ;; }}
 
@@ -1026,8 +1030,18 @@ might be bad."
   (browse-url-generic (concat "file://" (buffer-file-name))))
 
 ;; {{ which-key-mode
-(setq which-key-allow-imprecise-window-fit t) ; performance
-(setq which-key-separator ":")
+(defvar my-show-which-key-when-press-C-h nil)
+(with-eval-after-load 'which-key
+  (setq which-key-allow-imprecise-window-fit t) ; performance
+  (setq which-key-separator ":")
+  (setq which-key-idle-delay 1.5)
+  (when my-show-which-key-when-press-C-h
+    ;; @see https://twitter.com/bartuka_/status/1327375348959498240?s=20
+    ;; Therefore, the which-key pane only appears if I hit C-h explicitly.
+    ;; C-c <C-h> for example - by Wanderson Ferreira
+    (setq which-key-idle-delay 10000)
+    (setq which-key-show-early-on-C-h t))
+  (setq which-key-idle-secondary-delay 0.05))
 (my-run-with-idle-timer 2 #'which-key-mode)
 ;; }}
 
