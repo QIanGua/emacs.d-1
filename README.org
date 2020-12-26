@@ -72,6 +72,7 @@ Usable in [[https://packages.debian.org/emacs-nox][emacs-nox]] and works in [[ht
   - [[#run-the-unit-test-before-git-commit][Run the unit test before git commit]]
   - [[#python-environment][Python environment]]
   - [[#set-up-lsp-mode][Set up lsp-mode]]
+  - [[#enable-typewriter-sounds-when-typing][Enable typewriter sounds when typing]]
 - [[#support-legacy-emacs-versions][Support legacy Emacs versions]]
   - [[#emacs-23][Emacs 23]]
   - [[#emacs-243][Emacs 24.3]]
@@ -691,6 +692,8 @@ lsp-on-touch-time) 120) ;; 2 mins
 #+end_src
 
 Then run `M-x lsp` to start lsp client and server. Check [[https://github.com/emacs-lsp/lsp-mode]] on how to install lsp server.
+** Enable typewriter sounds when typing
+Run =M-x my-toggle-typewriter=. Please check bundled =typewriter-mode.el= for further setup.
 * Support legacy Emacs versions
 ** Emacs 23
 Version 1.2 of this setup is the last version to support Emacs v23.
@@ -711,6 +714,7 @@ Please use [[https://github.com/redguardtoo/emacs.d/archive/2.9.zip]] and [[http
 - Never turn off any bundled mode if it's on by default. Future version of Emacs may assume it's on. Tweak its flag in mode hook instead!
 - Git skills are *extremely useful*. Please read the chapters "Git Basics", "Git Branching", "Git Tools" from [[https://git-scm.com/book/en/][Pro Git]]
 - You can run =optimize-emacs-startup= to compile "*.el" under =lisp/=
+- Many advanced features in this configuration is only enabled in my personal =~/.custom.el=. Grep =defvar my-.*= in =~/.emacs.d/lisp/= to find them.  You can start from =init-company.el= and =init-spelling.el=.
 * Report bug
 Please check [[http://www.emacswiki.org/emacs/][EmacsWiki]] and my FAQ first.
 
