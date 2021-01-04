@@ -69,7 +69,7 @@
     molokai-theme
     ;; spacemacs-theme
     ;; leuven-theme
-    ;; sublime-themes
+    elpy ; use latest elpy since Python package API changes
     ;; tangotango-theme
     ;; darkburn-theme
     ;; ujelly-theme
