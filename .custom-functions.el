@@ -320,8 +320,32 @@
 
 (defun my/open-message-in-new-window ()
   (interactive)
-  (split-window-horizontally)
-  (winum-select-window-2)
-  (switch-to-buffer "*Messages*")
+  ;; (split-window-horizontally)
+  ;; (sleep-for 2)
+  ;; (winum-select-window-2)
+  ;; (switch-to-buffer "*Messages*")
+  (pop-to-buffer "*Messages*")
   (winum-select-window-1)
   )
+
+(defun org-map-entries ()
+  (interactive)
+          (when
+              (string=
+               (nth 2 (org-heading-components)) "TODO")
+             (org-todo "DONE")))
+
+(defun j-change-todo (start end state)
+  "Change heading todo states in region defined by START and END to STATE.
+Operate on whole buffer if no region is defined."
+  (interactive (list
+                (if (region-active-p) (region-beginning) (point-min))
+                (if (region-active-p) (region-end) (point-max))
+                (completing-read "State: " org-todo-keywords-1)))
+  (save-excursion
+    (goto-char start)
+    (when (org-at-heading-p)
+      (org-todo state))
+    (while (re-search-forward org-heading-regexp end t)
+      (org-todo state))))
+
