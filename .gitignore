@@ -69,3 +69,4 @@ transient/
 elpy/
 package-quickstart.el
 .lsp-session*
+.DS_Store

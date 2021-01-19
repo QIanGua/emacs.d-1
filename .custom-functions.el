@@ -322,9 +322,20 @@
   (interactive)
   ;; (split-window-horizontally)
   ;; (sleep-for 2)
-  ;; (winum-select-window-2)
-  ;; (switch-to-buffer "*Messages*")
-  (pop-to-buffer "*Messages*")
+  ;; (split-window-horizontally)
+  (evil-window-vsplit)
+  ;; move cursor to window 2: right buffer
+  ;; switch to buffer "message"
+  (switch-to-buffer "*Messages*")
+  (end-of-buffer)
+  (previous-line)
+  ;;to move top
+  ;; (evil-scroll-line-to-top line-number-at-pos)
+  (evil-scroll-line-to-top (string-to-number (format-mode-line "%l")))
+  (ace-swap-window)
+  ;; (find-file-other-window "*Messages*")
+  ;; (pop-to-buffer "*Messages*")
+  ;; return focus to window 1: left buffer
   (winum-select-window-1)
   )
 
