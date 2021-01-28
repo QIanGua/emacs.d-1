@@ -2,7 +2,12 @@
 
 ;; Without this comment emacs25 adds (package-initialize) here
 ;; (package-initialize)
+<<<<<<< HEAD
 (let* ((minver "25.1"))
+=======
+
+(let* ((minver "26.1"))
+>>>>>>> 322dc81055d01627904424c8c72f37d95fa286ea
   (when (version< emacs-version minver)
     (error "Emacs v%s or higher is required." minver)))
 
@@ -16,19 +21,13 @@
 (setq *cygwin* (eq system-type 'cygwin) )
 (setq *linux* (or (eq system-type 'gnu/linux) (eq system-type 'linux)) )
 (setq *unix* (or *linux* (eq system-type 'usg-unix-v) (eq system-type 'berkeley-unix)) )
-(setq *emacs26* (>= emacs-major-version 26))
 (setq *emacs27* (>= emacs-major-version 27))
 
 ;; don't GC during startup to save time
 (setq gc-cons-percentage 0.6)
 (setq gc-cons-threshold most-positive-fixnum)
 
-<<<<<<< HEAD
-(setq emacs-load-start-time (current-time))
 
-
-=======
->>>>>>> 7386c2e8d4160476e3f9ca6a68548401f072dad6
 ;; {{ emergency security fix
 ;; https://bugs.debian.org/766397
 (with-eval-after-load 'enriched
@@ -63,21 +62,7 @@
   (when (or (not maybe-disabled) (not (my-vc-merge-p)))
     (load (file-truename (format "%s/%s" my-lisp-dir pkg)) t t)))
 
-<<<<<<< HEAD
 
-(defun local-require (pkg)
-  "Require PKG in site-lisp directory."
-  (unless (featurep pkg)
-    (load (expand-file-name
-           (cond
-            ((eq pkg 'go-mode-load)
-             (format "%s/go-mode/%s" my-site-lisp-dir pkg))
-            (t
-             (format "%s/%s/%s" my-site-lisp-dir pkg pkg))))
-          t t)))
-
-=======
->>>>>>> 7386c2e8d4160476e3f9ca6a68548401f072dad6
 (defun my-add-subdirs-to-load-path (lisp-dir)
   "Add sub-directories under LISP-DIR into `load-path'."
   (let* ((default-directory lisp-dir))
@@ -97,11 +82,7 @@
 ;; ("\\`/:" . file-name-non-special))
 ;; Which means on every .el and .elc file loaded during start up, it has to runs those regexps against the filename.
 (let* ((file-name-handler-alist nil))
-<<<<<<< HEAD
     
-=======
-
->>>>>>> 7386c2e8d4160476e3f9ca6a68548401f072dad6
   (require-init 'init-autoload)
   ;; `package-initialize' takes 35% of startup time
   ;; need check https://github.com/hlissner/doom-emacs/wiki/FAQ#how-is-dooms-startup-so-fast for solution
@@ -109,15 +90,16 @@
   (require-init 'init-utils)
   (require-init 'init-file-type)
   (require-init 'init-elpa)
-  (require-init 'init-exec-path t) ;; Set up $PATH
+
+  ;; for unit test
+  (when my-disable-idle-timer
+    (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir)))
+
   ;; Any file use flyspell should be initialized after init-spelling.el
   (require-init 'init-spelling t)
-  (require-init 'init-uniquify t)
   (require-init 'init-ibuffer t)
   (require-init 'init-ivy)
-  (require-init 'init-hippie-expand)
   (require-init 'init-windows)
-  (require-init 'init-markdown t)
   (require-init 'init-javascript t)
   (require-init 'init-org t)
   (require-init 'init-css t)
@@ -170,8 +152,9 @@
   ;; Adding directories under "site-lisp/" to `load-path' slows
   ;; down all `require' statement. So we do this at the end of startup
   ;; NO ELPA package is dependent on "site-lisp/".
-  (setq load-path (cdr load-path))
-  (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir))
+  (unless my-disable-idle-timer
+    (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir)))
+
   (require-init 'init-flymake t)
   (unless (my-vc-merge-p)
       ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
