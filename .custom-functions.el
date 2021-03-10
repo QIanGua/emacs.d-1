@@ -274,8 +274,9 @@
 
 (defun my-latexmk-compiler ()
   (interactive)
+  (set-file-times (buffer-file-name)) ;; sets mod time to current time
   (let* (
-         (cmd (format "latexmk %s" buffer-file-name))
+         (cmd (format "latexmk -xelatex -outdir=out %s" buffer-file-name))
          )
     (message "run: %s" cmd)
     ;; (shell-command-to-string cmd)
