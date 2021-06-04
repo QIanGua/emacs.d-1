@@ -125,19 +125,35 @@
 (defun then_R_operator ()
   "%>% operator or 'then' pipe operator"
   (interactive)
-  (insert " %>% ")               ; note the space before the first %
+  ;; (insert " %>% ")               ; note the space before the first %
+  (insert " |> ")               ; note the space before the first %
   ;; (reindent-then-newline-and-indent)
   )
-   
-(global-set-key (kbd "C-'") 'then_R_operator)  
+;; (global-set-key (kbd "C-'") 'then_R_operator)
+(add-hook 'ess-r-mode-hook (lambda ()
+                             ;; (define-key ess-r-mode-map (kbd "C-'") 'then_R_operator)))
+                             (set-local-key (kbd "C-'") 'then_R_operator)))
 
 (defun equal_latex_operator ()
   (interactive)
   (insert " \\!=\\! ")               ; note the space before the first %
   ;; (reindent-then-newline-and-indent)
   )
-   
-(global-set-key (kbd "C-=") 'equal_latex_operator)  
+(add-hook 'latex-mode-hook (lambda ()
+                             (set-local-key (kbd "C-=") 'equal_latex_operator)))
+
+;; (global-set-key (kbd "C-=") 'equal_latex_operator)
+
+(defun then_Julia_operator ()
+  "%>% operator or 'then' pipe operator"
+  (interactive)
+  (insert " |> ")                       ; note the space before the first %
+  ;; (reindent-then-newline-and-indent)
+  )
+
+(add-hook 'julia-mode-hook (lambda ()
+                             (local-set-key  (kbd "C-'") 'then_Julia_operator)))
+
 ;; (defun org-export-docx ()
 ;;   (interactive)
 ;;   (let ((docx-file (concat (file-name-sans-extension (buffer-file-name)) ".docx"))
@@ -161,7 +177,7 @@
 
 (defun current-path ()
   (interactive)
-  (message "Directory: %s" (shell-command-to-string "pwd")) 
+  (message "Directory: %s" (shell-command-to-string "pwd"))
   )
 
 ;; (require 'ivy) ;;optional
@@ -170,11 +186,11 @@
   (let* ((keyword (read-string "Please input keyword: ")))
     (when (and keyword (not (string= keyword "")))
         (let* ((default-directory directory)
-                ;; (cmd "find . -path \"*/.git\" -prune -o -print -type f -name \"*.*\"") (output (shell-command-to-string cmd)) 
+                ;; (cmd "find . -path \"*/.git\" -prune -o -print -type f -name \"*.*\"") (output (shell-command-to-string cmd))
                 ;; ignore all dotfiles & name insensibility
                 (cmd (format "find . -path \"*/.*\" -prune -o  -type f -iname \"*%s*\" -print" keyword))
                 (default-directory directory)
-                (output (shell-command-to-string cmd)) 
+                (output (shell-command-to-string cmd))
                 ;; (lines (cdr (split-string output "[\n\r]+")))
                 (lines (split-string output "[\n\r]+"))
                 selectd-file)
@@ -185,7 +201,7 @@
                 (ivy-read (format "Find file in %s " default-directory ) lines)
                 )
             ;; (message "Selected-file: %s" selected-file)
-            (when (and selected-file (file-exists-p selected-file)) 
+            (when (and selected-file (file-exists-p selected-file))
             (find-file selected-file)
             )
             )
@@ -223,13 +239,13 @@
         (let* ((default-directory directory)
                ;; (cmd (format "fd %s . -a" keyword))
                (cmd (format "fd %s . " keyword))
-               (output (shell-command-to-string cmd)) 
+               (output (shell-command-to-string cmd))
                (lines (split-string output "[\n\r]+"))
                )
             (setq selected-file
                 (ivy-read (format "Find file in %s " default-directory ) lines)
                 )
-            (when (and selected-file (file-exists-p selected-file)) 
+            (when (and selected-file (file-exists-p selected-file))
             (find-file selected-file)
             )
             )
