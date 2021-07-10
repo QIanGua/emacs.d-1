@@ -2486,6 +2486,17 @@ ARG is anything else, turn on `workgroups-mode'."
 (defun wg-open-workgroup (&optional group-name)
   "Open specific workgroup by GROUP-NAME."
   (interactive)
+<<<<<<< HEAD
+  (let* ((group-names (wg-workgroup-names))
+         selected-group)
+    (when (and group-names
+               (setq selected-group
+                     (completing-read "Select work group: " group-names)))
+      (wg-open-session wg-session-file)
+      (wg-switch-to-workgroup-internal selected-group)))
+  (toggle-frame-fullscreen)
+  )
+=======
   (let ((group-names (wg-workgroup-names)))
     (cond
      (group-names
@@ -2497,6 +2508,7 @@ ARG is anything else, turn on `workgroups-mode'."
         (wg-switch-to-workgroup-internal group-name)))
      (t
       (message "No workgroup is created yet.")))))
+>>>>>>> b81f8adc45f3caa71009e4c479ea820e99c02f90
 
 (provide 'workgroups2)
 ;;; workgroups2.el ends here
