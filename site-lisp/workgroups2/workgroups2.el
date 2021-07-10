@@ -2588,7 +2588,9 @@ ARG is anything else, turn on `workgroups-mode'."
                (setq selected-group
                      (completing-read "Select work group: " group-names)))
       (wg-open-session wg-session-file)
-      (wg-switch-to-workgroup-internal selected-group))))
+      (wg-switch-to-workgroup-internal selected-group)))
+  (toggle-frame-fullscreen)
+  )
 
 (provide 'workgroups2)
 ;;; workgroups2.el ends here
