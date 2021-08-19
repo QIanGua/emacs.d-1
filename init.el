@@ -112,7 +112,7 @@
   ;; (require-init 'init-bbdb t)
   ;; (require-init 'init-gnus t)
   ;; (require-init 'init-lua-mode t)
-  (require-init 'init-workgroups2 t) ; use native API in lightweight mode
+  (require-init 'init-workgroups2 t)    ; use native API in lightweight mode
   (require-init 'init-term-mode t)
   ;; (require-init 'init-web-mode t)
   (require-init 'init-company t)
@@ -136,9 +136,9 @@
   ;; (require-init 'init-shackle t)
   (require-init 'init-dired t)
   (require-init 'init-writting t)
-  (require-init 'init-hydra) ; hotkey is required everywhere
+  (require-init 'init-hydra)            ; hotkey is required everywhere
   ;; use evil mode (vi key binding)
-  (require-init 'init-evil) ; init-evil dependent on init-clipboard
+  (require-init 'init-evil)             ; init-evil dependent on init-clipboard
 
   ;; ediff configuration should be last so it can override
   ;; the key bindings in previous configuration
@@ -153,27 +153,29 @@
 
   (require-init 'init-flymake t)
   (unless (my-vc-merge-p)
-      ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
-      ;; See `custom-file' for details.
-      (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el")))
-      (if (file-exists-p custom-file) (load custom-file t t))
+    ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
+    ;; See `custom-file' for details.
+    (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el")))
+    (if (file-exists-p custom-file) (load custom-file t t))
   
-      ;; my personal setup, other major-mode specific setup need it.
-      ;; It's dependent on *.el in `my-site-lisp-dir'
-      (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
-      (load (expand-file-name "~/Dotfiles/.custom.el") t nil)))
+    ;; my personal setup, other major-mode specific setup need it.
+    ;; It's dependent on *.el in `my-site-lisp-dir'
+    (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
+    ;; (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
+    )
+  )
 
 
 ;; @see https://www.reddit.com/r/emacs/comments/55ork0/is_emacs_251_noticeably_slower_than_245_on_windows/
 ;; Emacs 25 does gc too frequently
 ;; (setq garbage-collection-messages t) ; for debug
-(defun my-cleanup-gc ()
-  "Clean up gc."
-  (setq gc-cons-threshold  67108864) ; 64M
-  (setq gc-cons-percentage 0.1) ; original value
-  (garbage-collect))
+;; (defun my-cleanup-gc ()
+;;   "Clean up gc."
+;;   (setq gc-cons-threshold  67108864) ; 64M
+;;   (setq gc-cons-percentage 0.1) ; original value
+;;   (garbage-collect))
 
-(run-with-idle-timer 4 nil #'my-cleanup-gc)
+;; (run-with-idle-timer 4 nil #'my-cleanup-gc)
 
 
 ;;; Local Variables:
