@@ -72,6 +72,7 @@
                          (directory-files my-site-lisp-dir)))
            load-path))))
 
+
 ;; @see https://www.reddit.com/r/emacs/comments/3kqt6e/2_easy_little_known_steps_to_speed_up_emacs_start/
 ;; Normally file-name-handler-alist is set to
 ;; (("\\`/[^/]*\\'" . tramp-completion-file-name-handler)
@@ -79,7 +80,7 @@
 ;; ("\\`/:" . file-name-non-special))
 ;; Which means on every .el and .elc file loaded during start up, it has to runs those regexps against the filename.
 (let* ((file-name-handler-alist nil))
-    
+  
   (require-init 'init-autoload)
   ;; `package-initialize' takes 35% of startup time
   ;; need check https://github.com/hlissner/doom-emacs/wiki/FAQ#how-is-dooms-startup-so-fast for solution
@@ -97,12 +98,12 @@
   (require-init 'init-ibuffer t)
   (require-init 'init-ivy)
   (require-init 'init-windows)
-  (require-init 'init-javascript t)
+  ;; (require-init 'init-javascript t)
   (require-init 'init-org t)
-  (require-init 'init-python t)
+  ;; (require-init 'init-python t)
   (require-init 'init-lisp t)
   (require-init 'init-elisp t)
-  (require-init 'init-yasnippet t)
+  ;; (require-init 'init-yasnippet t)
   (require-init 'init-cc-mode t)
   (require-init 'init-linum-mode)
   (require-init 'init-git)
@@ -113,10 +114,10 @@
   ;; (require-init 'init-gnus t)
   ;; (require-init 'init-lua-mode t)
   (require-init 'init-workgroups2 t)    ; use native API in lightweight mode
-  (require-init 'init-term-mode t)
+  ;; (require-init 'init-term-mode t)
   ;; (require-init 'init-web-mode t)
   (require-init 'init-company t)
-  (require-init 'init-chinese t) ;; cannot be idle-required
+  ;; (require-init 'init-chinese t) ;; cannot be idle-required
   ;; need statistics of keyfreq asap
   (require-init 'init-keyfreq t)
   ;; (require-init 'init-httpd t)
@@ -125,7 +126,7 @@
 
   ;; don't play with color-theme in light weight mode
   ;; color themes are already installed in `init-elpa.el'
-  (require-init 'init-theme)
+  ;; (require-init 'init-theme)
 
   ;; misc has some crucial tools I need immediately
   (require-init 'init-essential)
@@ -157,11 +158,10 @@
     ;; See `custom-file' for details.
     (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el")))
     (if (file-exists-p custom-file) (load custom-file t t))
-  
+    
     ;; my personal setup, other major-mode specific setup need it.
     ;; It's dependent on *.el in `my-site-lisp-dir'
     (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
-    ;; (load (expand-file-name "~/Dotfiles/.custom.el") t nil)
     )
   )
 
@@ -176,7 +176,6 @@
 ;;   (garbage-collect))
 
 ;; (run-with-idle-timer 4 nil #'my-cleanup-gc)
-
 
 ;;; Local Variables:
 ;;; no-byte-compile: t

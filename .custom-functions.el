@@ -293,6 +293,7 @@
   (set-file-times (buffer-file-name)) ;; sets mod time to current time
   (let* (
          (cmd (format "latexmk -xelatex -outdir=out %s" buffer-file-name))
+         (cmd2 (format "latexmk -xelatex -outdir=out %s" buffer-file-name))
          )
     (message "run: %s" cmd)
     ;; (shell-command-to-string cmd)
@@ -400,3 +401,15 @@ Operate on whole buffer if no region is defined."
     (while (re-search-forward org-heading-regexp end t)
       (org-todo state))))
 
+(defun my/open-custom-el ()
+  (interactive)
+  (find-file "~/Dotfiles/.custom.el")
+  )
+
+
+;; time check
+(defmacro my/timer (&rest body)
+  "Measure and return the time it takes evaluating BODY."
+  `(let ((time (current-time)))
+     ,@body
+     (float-time (time-since time))))
