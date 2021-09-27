@@ -126,7 +126,7 @@
 
   ;; don't play with color-theme in light weight mode
   ;; color themes are already installed in `init-elpa.el'
-  ;; (require-init 'init-theme)
+  (require-init 'init-theme)
 
   ;; misc has some crucial tools I need immediately
   (require-init 'init-essential)
@@ -158,7 +158,6 @@
     ;; See `custom-file' for details.
     (setq custom-file (expand-file-name (concat my-emacs-d "custom-set-variables.el")))
     (if (file-exists-p custom-file) (load custom-file t t))
-    
     ;; my personal setup, other major-mode specific setup need it.
     ;; It's dependent on *.el in `my-site-lisp-dir'
     (load (expand-file-name "~/Dotfiles/.custom.el") t nil)

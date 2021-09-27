@@ -52,6 +52,26 @@
   (message "Sucessfully opened in Finder")
   )
 
+(defun my-finder-path ()
+  "Return path of the frontmost Finder window, or the empty string.
+
+Asks Finder for the path using AppleScript via `osascript', so
+this can take a second or two to execute."
+  (let ($applescript)
+    (setq $applescript "tell application \"Finder\" to if (count of Finder windows) > 0 then get POSIX path of (target of front Finder window as text)")
+    (with-temp-buffer
+      ;; Produce a list of process exit code and process output (from the temp buffer)
+      (call-process "/usr/bin/osascript" nil (current-buffer) nil "-e" $applescript)
+      (string-trim (buffer-string)))))
+
+(defun my-dired-finder-path ()
+  (interactive)
+  (let (($path (my-finder-path)))
+    (if (string-equal "" $path)
+        (message "No Finder window found.")
+      (dired $path))))
+
+
 ;; (defun iterm-here ()
 ;;   (interactive)
 ;;   (dired-smart-shell-command "open -a iTerm $PWD" nil nil))
@@ -359,7 +379,7 @@
 ;;       (concat (capitalize first-char) rest-str))))
 
 
-(defun my/open-message-in-new-window ()
+(defun my-open-message-in-new-window ()
   (interactive)
   ;; (split-window-horizontally)
   ;; (sleep-for 2)
@@ -401,15 +421,15 @@ Operate on whole buffer if no region is defined."
     (while (re-search-forward org-heading-regexp end t)
       (org-todo state))))
 
-(defun my/open-custom-el ()
+(defun my-open-custom-el ()
   (interactive)
   (find-file "~/Dotfiles/.custom.el")
   )
 
 
 ;; time check
-(defmacro my/timer (&rest body)
-  "Measure and return the time it takes evaluating BODY."
-  `(let ((time (current-time)))
-     ,@body
-     (float-time (time-since time))))
+;; (defmacro my/timer (&rest body)
+;;   "Measure and return the time it takes evaluating BODY."
+;;   `(let ((time (current-time)))
+;;      ,@body
+;;      (float-time (time-since time))))
