@@ -102,7 +102,12 @@
   (require-init 'init-org t)
   ;; (require-init 'init-python t)
   (require-init 'init-lisp t)
+<<<<<<< HEAD
+  (require-init 'init-elisp t)
   ;; (require-init 'init-yasnippet t)
+=======
+  (require-init 'init-yasnippet t)
+>>>>>>> 6801632f4d92897df8dbbf9d4fa92cd3a62576b8
   (require-init 'init-cc-mode t)
   (require-init 'init-linum-mode)
   (require-init 'init-git)
