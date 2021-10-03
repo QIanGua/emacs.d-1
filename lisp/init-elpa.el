@@ -313,7 +313,7 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 ;; rvm-open-gem to get gem's code
 (require-package 'rvm)
 ;; C-x r l to list bookmarks
-(require-package 'js-doc)
+;(require-package 'js-doc)
 (require-package 'js2-mode)
 (require-package 'rjsx-mode)
 (require-package 'tagedit)
