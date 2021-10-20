@@ -253,22 +253,22 @@ this can take a second or two to execute."
 
 
 (defun my-find-file-internal-fd (directory)
-  ;; (interactive)
+  (interactive)
   (let* ((keyword (read-string "Please input keyword: ")))
     (when (and keyword (not (string= keyword "")))
-        (let* ((default-directory directory)
-               ;; (cmd (format "fd %s . -a" keyword))
-               (cmd (format "fd %s . " keyword))
-               (output (shell-command-to-string cmd))
-               (lines (split-string output "[\n\r]+"))
-               )
-            (setq selected-file
-                (ivy-read (format "Find file in %s " default-directory ) lines)
-                )
-            (when (and selected-file (file-exists-p selected-file))
-            (find-file selected-file)
-            )
-            )
+      (let* ((default-directory directory)
+             ;; (cmd (format "fd %s . -a" keyword))
+             (cmd (format "fd %s . " keyword))
+             (output (shell-command-to-string cmd))
+             (lines (split-string output "[\n\r]+"))
+             )
+        (setq selected-file
+              (ivy-read (format "Find file in %s " default-directory ) lines)
+              )
+        (when (and selected-file (file-exists-p selected-file))
+          (find-file selected-file)
+          )
+        )
 
       )
 
@@ -286,7 +286,7 @@ this can take a second or two to execute."
             (file-name-directory (directory-file-name parent-directory)))
       (setq i (+ i 1)))
     (message "Current Directory:%s" parent-directory)
-  (my-find-file-internal-fd parent-directory)))
+    (my-find-file-internal-fd parent-directory)))
 
 ;; (general-imap "f"
 ;;   (general-key-dispatch 'self-insert-command
