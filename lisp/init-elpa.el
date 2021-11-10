@@ -263,8 +263,6 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
 (require-package 'csv-mode)
 (require-package 'expand-region) ; I prefer stable version
 (require-package 'fringe-helper)
-(require-package 'gitignore-mode)
-(require-package 'gitconfig-mode)
 (require-package 'wgrep)
 (require-package 'request)
 (require-package 'lua-mode)
@@ -386,12 +384,15 @@ You still need modify `package-archives' in \"init-elpa.el\" to PERMANENTLY use 
   (dolist (theme popular-themes)
     (require-package theme)))
 
+(require-package 'git-modes)
 (require-package 'magit)
 (require-package 'ace-pinyin)
 (require-package 'which-key)
 (require-package 'highlight-symbol)
 (require-package 'wc-mode)
 (require-package 'qrencode)
+(require-package 'ws-butler)
+(require-package 'sage-shell-mode)
 
 ;; speed up CI
 (unless my-disable-idle-timer
