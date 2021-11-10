@@ -313,7 +313,7 @@ this can take a second or two to execute."
   (set-file-times (buffer-file-name)) ;; sets mod time to current time
   (let* (
          (cmd (format "latexmk -xelatex -outdir=out %s" buffer-file-name))
-         (cmd2 (format "latexmk -xelatex -outdir=out %s" buffer-file-name))
+         ;; (cmd2 (format "latexmk -xelatex -outdir=out %s" buffer-file-name))
          )
     (message "run: %s" cmd)
     ;; (shell-command-to-string cmd)
@@ -426,7 +426,24 @@ Operate on whole buffer if no region is defined."
   (find-file "~/Dotfiles/.custom.el")
   )
 
+(defun cppcm-cmake-in-root-build-dir ()
+  "Compile in build directory"
+  (interactive)
+  (setq cmake-git-path (locate-dominating-file default-directory ".git"))
+  (setq cmake-build-path (concat cmake-git-path "build"))
+  (setq cmake-src-path (concat cmake-git-path "src"))
+  ;; if ./build not exist, create it
+  (unless (file-directory-p cmake-build-path)
+    (message "%s" "@alert@: build/ doesn't exist, create it")
+    (make-directory cmake-build-path))
+  (setq compile-command (concat "cd " cmake-build-path " && " "cmake " cmake-src-path " && make"))
+  (call-interactively 'compile)
+  )
 
+(defun org-to-md-then-preview ()
+  (interactive)
+  (org-hugo-export-to-md)
+  (easy-hugo-preview))
 ;; time check
 ;; (defmacro my/timer (&rest body)
 ;;   "Measure and return the time it takes evaluating BODY."
