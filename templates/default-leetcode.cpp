@@ -7,20 +7,18 @@
 #include "headers.h"
 #include <gtest/gtest.h>
 
-class Solution{
+class Solution {
 public:
 
 };
 
-TEST(TTT, TTT)
-{
+TEST(TTT, TTT) {
     Solution s;
 
 }
 
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     cout << "Problem: `(upcase (file-name-nondirectory (buffer-file-name)))`" << endl;
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

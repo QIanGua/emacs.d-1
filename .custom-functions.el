@@ -431,12 +431,16 @@ Operate on whole buffer if no region is defined."
   (interactive)
   (setq cmake-git-path (locate-dominating-file default-directory ".git"))
   (setq cmake-build-path (concat cmake-git-path "build"))
-  (setq cmake-src-path (concat cmake-git-path "src"))
+  ;; (setq cmake-src-path (concat cmake-git-path "src"))
+  (setq cmake-src-path (concat cmake-git-path "src/script-cxx"))
+  ;; accept parameter: problem bumber
+  (setq filename (file-name-nondirectory buffer-file-name))
+  (setq problemNum (substring filename 0 4))
   ;; if ./build not exist, create it
   (unless (file-directory-p cmake-build-path)
     (message "%s" "@alert@: build/ doesn't exist, create it")
     (make-directory cmake-build-path))
-  (setq compile-command (concat "cd " cmake-build-path " && " "cmake " cmake-src-path " && make"))
+  (setq compile-command (concat "cd " cmake-build-path " && " "cmake " cmake-src-path " -D PROBLEM_NUMBER=" problemNum " && make && make run"))
   (call-interactively 'compile)
   )
 
