@@ -2,9 +2,19 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("org-capture-last-stored"
- (filename . "~/RoamNotes/20211116003141-programming_language.org")
- (front-context-string)
- (rear-context-string . "amming Language\n")
- (position . 98))
+((".custom.el"
+ (filename . "~/Dotfiles/.custom.el")
+ (front-context-string . ")\n;; (add-to-lis")
+ (rear-context-string . "ype \"socks5\")\n  ")
+ (position . 3110))
+("org-refile-last-stored"
+ (filename . "~/RoamNotes/daily/2021-11-16.org")
+ (front-context-string . "** DONE jupyter ")
+ (rear-context-string . "da deactivate=\n\n")
+ (position . 377))
+("org-capture-last-stored"
+ (filename . "~/Code/Emacs/GTD/Inbox.org")
+ (front-context-string . "** STARTED [#C] ")
+ (rear-context-string . "+end_src\n* Task\n")
+ (position . 772))
 )

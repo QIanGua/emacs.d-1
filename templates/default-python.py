@@ -6,7 +6,7 @@
 #  -*- coding: utf-8 -*-
 
 class Solution:
-    def $1
+    def
 
     
 import unittest                

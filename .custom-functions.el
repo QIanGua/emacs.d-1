@@ -400,12 +400,12 @@ this can take a second or two to execute."
   (winum-select-window-1)
   )
 
-(defun org-map-entries ()
-  (interactive)
-          (when
-              (string=
-               (nth 2 (org-heading-components)) "TODO")
-             (org-todo "DONE")))
+;; (defun org-map-entries ()
+;;   (interactive)
+;;           (when
+;;               (string=
+;;                (nth 2 (org-heading-components)) "TODO")
+;;              (org-todo "DONE")))
 
 (defun j-change-todo (start end state)
   "Change heading todo states in region defined by START and END to STATE.
@@ -454,3 +454,12 @@ Operate on whole buffer if no region is defined."
 ;;   `(let ((time (current-time)))
 ;;      ,@body
 ;;      (float-time (time-since time))))
+(defun xah-new-empty-buffer ()
+  "Open a new empty buffer.
+URL `http://ergoemacs.org/emacs/emacs_new_empty_buffer.html'
+Version 2016-08-11"
+  (interactive)
+  (let ((-buf (generate-new-buffer "untitled")))
+    (switch-to-buffer -buf)
+    (funcall initial-major-mode)
+    (setq buffer-offer-save t)))

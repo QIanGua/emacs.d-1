@@ -3,6 +3,9 @@
 ;; My frequently used commands are listed here
 
 ;; enable evil-mode
+(setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+(setq evil-want-keybinding nil) ;; enable evil-collection
+
 (evil-mode 1)
 
 ;; {{ replace undo-tree with undo-fu
