@@ -463,3 +463,50 @@ Version 2016-08-11"
     (switch-to-buffer -buf)
     (funcall initial-major-mode)
     (setq buffer-offer-save t)))
+
+(defun counsel-imenu-comments ()
+  (interactive)
+  (let* ((imenu-create-index-function 'evilnc-imenu-create-index-function))
+    (unless (featurep 'counsel) (require 'counsel))
+    (counsel-imenu)))
+
+
+(defun my-comment-box (b e)
+  "Draw a box comment around the region but arrange for the
+region to extend to at least the fill column. Place the point
+after the comment box."
+  (interactive "r")
+  (let ((e (copy-marker e t)))
+    (goto-char b)
+    (end-of-line)
+    (insert-char ?  (- fill-column (current-column) 5))
+    (comment-box b e 1)
+    (goto-char e)
+    (set-marker e nil))
+  )
+
+(use-package ess)
+
+(defun ess-r-comment-box-line ()
+  "Insert a comment box around the text of the current line of an R script.
+If the current line indentation is 0, the comment box begins with ###.
+Otherwise, it begins with ## and is indented accordingly."
+  (interactive)
+  (save-excursion
+    (let ((beg (progn (back-to-indentation)
+                      (point)))
+          (end (line-end-position)))
+      (comment-box beg end
+                   (if (> (current-indentation) 0)
+                       1
+                     2)))))
+
+(defun my-to-gbk ()
+  (interactive)
+  (let* (
+         (cmd (format "sh ToGBK.sh"))
+         )
+    (message "run: %s" cmd)
+    (shell-command cmd)
+    )
+  )

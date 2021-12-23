@@ -1,4 +1,4 @@
-;;;; Emacs Bookmark Format Version 1 ;;;; -*- coding: utf-8-emacs -*-
+;;;; Emacs Bookmark Format Version 1 ;;;; -*- coding: utf-8 -*-
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
@@ -13,8 +13,8 @@
  (rear-context-string . "da deactivate=\n\n")
  (position . 377))
 ("org-capture-last-stored"
- (filename . "~/Code/Emacs/GTD/Inbox.org")
- (front-context-string . "** STARTED [#C] ")
- (rear-context-string . "+end_src\n* Task\n")
- (position . 772))
+ (filename . "~/RoamNotes/20211215225129-git.org")
+ (front-context-string . "\n* GIT\n** rebase")
+ (rear-context-string . "2-15 Wed 22:51]\n")
+ (position . 112))
 )
