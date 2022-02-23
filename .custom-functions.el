@@ -7,6 +7,65 @@
 ;;     )
 ;;   )
 
+;; ;; 2022-02-21
+;; (defun ora-dired-rsync (dest)
+;;   (interactive
+;;    (list
+;;     (expand-file-name
+;;      (read-file-name
+;;       "Rsync to:"
+;;       (dired-dwim-target-directory)))))
+;;   ;; store all selected files into "files" list
+;;   (let ((files (dired-get-marked-files
+;;                 nil current-prefix-arg))
+;;         ;; the rsync command
+;;         (tmtxt/rsync-command
+;;          "rsync -arvz --progress "))
+;;     ;; add all selected file names as arguments
+;;     ;; to the rsync command
+;;     (dolist (file files)
+;;       (setq tmtxt/rsync-command
+;;             (concat tmtxt/rsync-command
+;;                     (shell-quote-argument file)
+;;                     " ")))
+;;     ;; append the destination
+;;     (setq tmtxt/rsync-command
+;;           (concat tmtxt/rsync-command
+;;                   (shell-quote-argument dest)))
+;;     ;; run the async shell command
+;;     (async-shell-command tmtxt/rsync-command "*rsync*")
+;;     ;; finally, switch to that window
+;;     (other-window 1)))
+
+;; (define-key dired-mode-map "Y" 'ora-dired-rsync)
+
+
+
+(defun google-this-line-noconfirm (prefix)
+  "Google the current line without confirmation. PREFIX determines quoting."
+  (interactive "P")
+  (google-this-line prefix 'noconfirm))
+
+(defun google-this-region-noconfirm (prefix)
+  "Google the current line without confirmation. PREFIX determines quoting."
+  (interactive "P")
+  (google-this-region prefix 'noconfirm))
+
+(defun org-insert-src-block (src-code-type)
+  "Insert a `SRC-CODE-TYPE' type source code block in org-mode."
+  (interactive
+   (let ((src-code-types
+          '("emacs-lisp" "jupyter-python" "sh"  "C++"
+            "R"  "python"  "jupyter-julia")))
+     (list (ido-completing-read "Source code type: " src-code-types))))
+  (progn
+    (newline-and-indent)
+    (insert (format "#+BEGIN_SRC %s\n" src-code-type))
+    (newline-and-indent)
+    (insert "#+END_SRC\n")
+    (previous-line 2)
+    (org-edit-src-code)))
+
 ;; reload init file
 (defun reload-init-file ()
   (interactive)

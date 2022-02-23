@@ -1,7 +1,7 @@
 ;;; Elfeed score rule stats file DO NOT EDIT       -*- lisp -*-
 (:version 1 :stats #s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8125 data
                                  (#s(elfeed-score-title-or-content-rule "uncertainty" 50 10 s nil nil nil)
-                                    #s(elfeed-score-rule-stats 4 1638933449.888746)
+                                    #s(elfeed-score-rule-stats 7 1645456518.034068)
                                     #s(elfeed-score-title-or-content-rule ".*[- ]ODE[- s].*" 100 20 R nil nil nil)
                                     #s(elfeed-score-rule-stats 0 1596818708.18127)
                                     #s(elfeed-score-title-or-content-rule ".*[- ]random matrix[- s].*" 100 20 r nil nil nil)
