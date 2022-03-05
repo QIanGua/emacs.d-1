@@ -438,7 +438,7 @@ this can take a second or two to execute."
 ;;       (concat (capitalize first-char) rest-str))))
 
 
-(defun my-open-message-in-new-window ()
+(defun my/open-message-in-new-window ()
   (interactive)
   ;; (split-window-horizontally)
   ;; (sleep-for 2)
@@ -480,10 +480,18 @@ Operate on whole buffer if no region is defined."
     (while (re-search-forward org-heading-regexp end t)
       (org-todo state))))
 
-(defun my-open-custom-el ()
+(defun my/open-custom-el ()
   (interactive)
   (find-file "~/Dotfiles/.custom.el")
   )
+
+(defun my/open-rime-top-txt ()
+  (interactive)
+  (find-file "~/Dotfiles/Rime/flypy_top.txt"))
+
+(defun my/open-edn ()
+  (interactive)
+  (find-file "~/.config/karabiner.edn"))
 
 (defun cppcm-cmake-in-root-build-dir ()
   "Compile in build directory"
@@ -544,21 +552,20 @@ after the comment box."
     (set-marker e nil))
   )
 
-(use-package ess)
-
-(defun ess-r-comment-box-line ()
-  "Insert a comment box around the text of the current line of an R script.
-If the current line indentation is 0, the comment box begins with ###.
-Otherwise, it begins with ## and is indented accordingly."
-  (interactive)
-  (save-excursion
-    (let ((beg (progn (back-to-indentation)
-                      (point)))
-          (end (line-end-position)))
-      (comment-box beg end
-                   (if (> (current-indentation) 0)
-                       1
-                     2)))))
+;; (use-package ess)
+;; (defun ess-r-comment-box-line ()
+;;   "Insert a comment box around the text of the current line of an R script.
+;; If the current line indentation is 0, the comment box begins with ###.
+;; Otherwise, it begins with ## and is indented accordingly."
+;;   (interactive)
+;;   (save-excursion
+;;     (let ((beg (progn (back-to-indentation)
+;;                       (point)))
+;;           (end (line-end-position)))
+;;       (comment-box beg end
+;;                    (if (> (current-indentation) 0)
+;;                        1
+;;                      2)))))
 
 (defun my-to-gbk ()
   (interactive)

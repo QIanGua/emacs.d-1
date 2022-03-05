@@ -2,4 +2,9 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-()
+(("org-capture-last-stored"
+ (filename . "~/RoamNotes/20220227101242-llvm.org")
+ (front-context-string . "\n* LLVM: Low Lev")
+ (rear-context-string . "2-27 Sun 10:12]\n")
+ (position . 113))
+)

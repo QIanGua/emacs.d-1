@@ -65,7 +65,8 @@ EVENT is ignored."
 (advice-add 'term-sentinel :after #'my-kill-process-buffer-when-exit)
 
 ;; always use bash
-(defvar my-term-program "/bin/bash")
+;; (defvar my-term-program "/bin/bash")
+(defvar my-term-program "/usr/local/bin/zsh")
 
 ;; utf8
 (defun my-term-use-utf8 ()
