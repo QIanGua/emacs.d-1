@@ -91,18 +91,18 @@
     (query-replace (current-kill 0) replace-str) ))
 
 ;; replace current word or selection using vim style for evil mode
-(defun evil-replace-word-selection()
-  (interactive)
-  (if (use-region-p)
-      (let (
-            (selection (buffer-substring-no-properties (region-beginning) (region-end))))
-        (if (= (length selection) 0)
-            (message "empty string")
-          (evil-ex (concat "'<,'>s/" selection "/"))
-          ))
-    (evil-ex (concat "%s/" (thing-at-point 'word) "/"))))
+;; (defun evil-replace-word-selection()
+;;   (interactive)
+;;   (if (use-region-p)
+;;       (let (
+;;             (selection (buffer-substring-no-properties (region-beginning) (region-end))))
+;;         (if (= (length selection) 0)
+;;             (message "empty string")
+;;           (evil-ex (concat "'<,'>s/" selection "/"))
+;;           ))
+;;     (evil-ex (concat "%s/" (thing-at-point 'word) "/"))))
 
-(global-set-key (kbd "\C-co") 'evil-replace-word-selection)
+;; (global-set-key (kbd "\C-co") 'evil-replace-word-selection)
 
 (defun show-in-finder()
   (interactive)
@@ -367,7 +367,7 @@ this can take a second or two to execute."
 ;;     (candidates (company-gtags--fetch-tags arg))
 ;;     ))
 
-(defun my-latexmk-compiler ()
+(defun my/latexmk-compiler ()
   (interactive)
   (set-file-times (buffer-file-name)) ;; sets mod time to current time
   (let* (
@@ -567,7 +567,7 @@ after the comment box."
 ;;                        1
 ;;                      2)))))
 
-(defun my-to-gbk ()
+(defun my/To-gbk ()
   (interactive)
   (let* (
          (cmd (format "sh ToGBK.sh"))
@@ -575,4 +575,11 @@ after the comment box."
     (message "run: %s" cmd)
     (shell-command cmd)
     )
+  )
+
+(defun my/Tex-command-run-all ()
+  (interactive)
+  ;; (shell-command (concat "touch " (shell-quote-argument (buffer-file-name))))
+  (set-file-times (buffer-file-name)) ;; sets mod time to current time
+  (TeX-command-sequence t t)
   )
