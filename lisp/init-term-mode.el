@@ -57,7 +57,7 @@ EVENT is ignored."
 
 (defun eshell-mode-hook-setup ()
   "Set up `eshell-mode'."
-  (local-set-key (kbd "C-c C-y") 'hydra-launcher/body)
+  (local-set-key (kbd "C-c C-y") 'my-hydra-launcher/body)
   (local-set-key (kbd "M-n") 'counsel-esh-history))
 (add-hook 'eshell-mode-hook 'eshell-mode-hook-setup)
 
@@ -106,12 +106,15 @@ EVENT is ignored."
   (setq comint-password-prompt-regexp
         (format "%s\\|^ *Password for .*: *$" comint-password-prompt-regexp))
   (add-hook 'comint-output-filter-functions 'comint-watch-for-password-prompt))
-(defun comint-mode-hook-setup ()
+
+(defun my-comint-mode-hook-setup ()
+  "Set up embedded shells."
+  (local-set-key (kbd "C-c C-l") 'eacl-complete-line-from-buffer)
   ;; look up shell command history
   (local-set-key (kbd "M-n") 'counsel-shell-history)
   ;; Don't show trailing whitespace in REPL.
   (local-set-key (kbd "M-;") 'comment-dwim))
-(add-hook 'comint-mode-hook 'comint-mode-hook-setup)
+(add-hook 'comint-mode-hook 'my-comint-mode-hook-setup)
 ;; }}
 
 (provide 'init-term-mode)

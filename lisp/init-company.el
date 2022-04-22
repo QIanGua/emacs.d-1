@@ -4,8 +4,12 @@
 
 ;; evil has already integrated company-mode, see evil-integration.el
 
+(defvar my-company-select-by-number-p t
+  "User can press number key to select company candidate.")
+
 (defvar my-company-zero-key-for-filter nil
-  "If t, pressing 0 calls `company-filter-candidates' per company's status.")
+  "If t, pressing 0 calls `company-filter-candidates' per company's status.
+If `my-company-select-by-number-p' is nil, this flag is ignored. ")
 
 (with-eval-after-load 'company
 
@@ -46,11 +50,12 @@ In that case, insert the number."
 
   ;; @see https://oremacs.com/2017/12/27/company-numbers/
   ;; Using digits to select company-mode candidates
-  (let ((map company-active-map))
-    (mapc
-     (lambda (x)
-       (define-key map (format "%d" x) 'my-company-number))
-     (number-sequence 0 9)))
+  (when my-company-select-by-number-p
+    (let ((map company-active-map))
+      (mapc
+       (lambda (x)
+         (define-key map (format "%d" x) 'my-company-number))
+       (number-sequence 0 9))))
 
   (setq company-auto-commit t)
   ;; characters "/ ) . , ;"to trigger auto commit
@@ -124,7 +129,7 @@ In that case, insert the number."
     (push 'company-ispell company-backends)
     (message "company-ispell enabled!"))))
 
-(defun company-ispell-setup ()
+(defun my-company-ispell-setup ()
   ;; @see https://github.com/company-mode/company-mode/issues/50
   (when (boundp 'company-backends)
     (make-local-variable 'company-backends)
@@ -139,7 +144,7 @@ In that case, insert the number."
 
 ;; message-mode use company-bbdb.
 ;; So we should NOT turn on company-ispell
-(add-hook 'org-mode-hook 'company-ispell-setup)
+(add-hook 'org-mode-hook 'my-company-ispell-setup)
 ;; }}
 
 (provide 'init-company)

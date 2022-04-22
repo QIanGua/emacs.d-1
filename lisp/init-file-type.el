@@ -5,10 +5,13 @@
                "\\.[^b][^a][a-zA-Z]*rc$"
                "\\.aspell\\.en\\.pws$"
                "\\.i3/config-base$"
+               "\\.config/systemd/user/.*\\.service$"
                "\\mimeapps\\.list$"
                "\\mimeapps\\.list$"
                "\\.editorconfig$"
                "\\.meta$"
+               "^\\.env\\([-.][0-9a-z]+\\)?$" ; ".env" or ".env.local"
+               "PKGBUILD$" ; archlinux
                "\\.?muttrc$"
                "\\.mailcap$")
 ;; }}
@@ -20,6 +23,7 @@
 (my-add-auto-mode 'emacs-lisp-mode
                "\\.emacs-project\\'"
                "archive-contents\\'"
+               "\\.emacs_workgroups\\'"
                "\\.emacs\\.bmk\\'" )
 ;; }}
 
@@ -105,7 +109,7 @@
   (my-add-auto-mode 'js2-mode "\\.js\\(\\.erb\\)?\\'")
   ;; JSX
   (my-add-auto-mode 'rjsx-mode
-                 "\\.jsx\\'"
+                 "\\.[tj]sx\\'"
                  "components\\/.*\\.js\\'")
   ;; mock file
   (my-add-auto-mode 'js-mode "\\.mock.js\\'")
@@ -133,5 +137,6 @@
 ;; `css-mode' has better imenu support and won't force flymake to create rubbish files.
 ;; besides, scss/sass is outdated. We use postcss or css in js these days.
 (my-add-auto-mode 'css-mode "\\.scss$")
+
 
 (provide 'init-file-type)

@@ -1,4 +1,5 @@
 ;; -*- coding: utf-8; lexical-binding: t; -*-
+
 (defun diredext-exec-git-command-in-shell (command &optional arg file-list)
   "Run a shell command `git COMMAND`' on the marked files.
 If no files marked, always operate on current line in dired-mode."
@@ -39,39 +40,57 @@ If no files marked, always operate on current line in dired-mode."
       (error "no more than 2 files should be marked")))))
 
 
+(defun my-dired-support-program (program pattern)
+  "External PROGRAM can open files matching PATTERN."
+  (push (list pattern program) dired-guess-shell-alist-user))
+
 (with-eval-after-load 'dired-x
-  (dolist (file `(((if *unix* "zathura" "open") "pdf" "dvi" "pdf.gz" "ps" "eps")
-                  ("7z x" "rar" "zip" "7z") ; "e" to extract, "x" to extract with full path
-                  ((if *is-a-mac* "open" (my-guess-mplayer-path)) "ogm"
-                   "avi"
-                   "mpg"
-                   "rmvb"
-                   "rm"
-                   "flv"
-                   "wmv"
-                   "mkv"
-                   "mp4"
-                   "m4v"
-                   "wav"
-                   "webm"
-                   "part"
-                   "mov"
-                   "3gp"
-                   "crdownload"
-                   "mp3")
-                  ((concat (my-guess-mplayer-path) "-fs -playlist") "list" "pls" "m3u")
-                  ((if *unix* "feh" "open") "gif" "jpeg" "jpg" "tif" "png" )
-                  ((if *unix* "libreoffice" "open") "doc" "docx" "xls" "xlsx" "odt")
-                  ("djview" "djvu")
-                  ("firefox" "xml" "xhtml" "html" "htm" "mht" "epub")))
-    (add-to-list 'dired-guess-shell-alist-user
-                 (list (concat "\\." (regexp-opt (cdr file) t) "$")
-                       (car file)))))
+  (my-dired-support-program (if *is-a-mac* "open" (my-guess-mplayer-path))
+                            (my-file-extensions-to-regexp my-media-file-extensions))
+
+  (my-dired-support-program (if *unix* "zathura" "open")
+                            (my-file-extensions-to-regexp '("pdf"
+                                                            "pdf.gz"
+                                                            "dvi"
+                                                            "eps"
+                                                            "ps")))
+
+  ;; "e" to extract, "x" to extract with full path
+  (my-dired-support-program "7z x"
+                            (my-file-extensions-to-regexp '("rar"
+                                                            "zip"
+                                                            "7z")))
+
+  (my-dired-support-program (if *unix* "feh" "open")
+                            (my-file-extensions-to-regexp '("gif"
+                                                            "jpg"
+                                                            "jpeg"
+                                                            "tif"
+                                                            "png"
+                                                            "svg"
+                                                            "xpm")))
+
+  (my-dired-support-program (if *unix* "libreoffice" "open")
+                            (my-file-extensions-to-regexp '("doc"
+                                                            "docx"
+                                                            "xls"
+                                                            "xlsx"
+                                                            "odt")))
+
+  (my-dired-support-program "djview" "\\.djvu$")
+
+  (my-dired-support-program "firefox"
+                            (my-file-extensions-to-regexp '("xml"
+                                                            "xhtml"
+                                                            "html"
+                                                            "htm"
+                                                            "mht"
+                                                            "epub"))))
 
 (defun dired-mode-hook-setup ()
   "Set up dired."
   (dired-hide-details-mode 1)
-  (local-set-key "r" 'dired-up-directory)
+  (local-set-key  "r" 'dired-up-directory)
   (local-set-key  "e" 'my-ediff-files)
   (local-set-key  "/" 'dired-isearch-filenames)
   (local-set-key  "\\" 'diredext-exec-git-command-in-shell))
@@ -82,6 +101,45 @@ If no files marked, always operate on current line in dired-mode."
 ;; If the variable is named like "*-history", it will be *automatically* saved.
 (defvar my-dired-directory-history nil
   "Recent directories accessed by dired.")
+
+(defvar my-dired-exclude-directory-regexp nil
+  "Dired directories matching this regexp are not added into directory history.")
+
+(defun my-shell-directories-from-fasd ()
+  "Directories from fasd (https://github.com/clvv/fasd) in shell."
+  (and (executable-find "fasd")
+       (my-nonempty-lines (shell-command-to-string "fasd -ld"))))
+
+(defun my-shell-directories-from-z ()
+  "Directories from z (https://github.com/rupa/z) in shell."
+  (mapcar #'car (shellcop-directories-from-z)))
+
+(defvar my-shell-directory-history-function #'my-shell-directories-from-fasd
+  "Return directory history in shell.  Used by `my-recent-directory'.")
+
+(defun my-recent-directory (&optional n)
+  "Goto recent directories.
+If N is not nil, only list directories in current project."
+  (interactive "P")
+  (unless recentf-mode (recentf-mode 1))
+  (let* ((cands (delete-dups
+                 (append my-dired-directory-history
+                         (mapcar 'file-name-directory recentf-list)
+                         (and my-shell-directory-history-function
+                              (funcall my-shell-directory-history-function)))))
+         (root-dir (if (ffip-project-root) (file-truename (ffip-project-root)))))
+
+    (when (and n root-dir)
+      ;; return directories in project root
+      (setq cands
+            (cl-remove-if-not (lambda (f) (path-in-directory-p f root-dir)) cands)))
+
+    (when my-dired-exclude-directory-regexp
+      (setq cands
+            (cl-remove-if (lambda (f) (string-match my-dired-exclude-directory-regexp f))
+                          cands)))
+
+    (dired (completing-read "Directories: " cands))))
 
 (with-eval-after-load 'dired
   ;; re-use dired buffer, available in Emacs 28
@@ -183,7 +241,7 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
     "Avoid accidentally editing huge file in dired."
     (let* ((file (dired-get-file-for-visit)))
       (cond
-       ((string-match-p my-binary-file-name-regexp file)
+       ((my-binary-file-p file)
         ;; confirm before opening big file
         (when (yes-or-no-p "Edit binary file?")
           (apply orig-func args)))
@@ -191,7 +249,9 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
         (when (and (file-directory-p file)
                    ;; don't add directory when user pressing "^" in `dired-mode'
                    (not (string-match-p "\\.\\." file)))
-          (add-to-list 'my-dired-directory-history file))
+          (unless (and my-dired-exclude-directory-regexp
+                       (string-match my-dired-exclude-directory-regexp file))
+            (push file my-dired-directory-history)))
         (apply orig-func args)))))
   (advice-add 'dired-find-file :around #'my-dired-find-file-hack)
 
