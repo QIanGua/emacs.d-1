@@ -10,8 +10,9 @@
                "\\mimeapps\\.list$"
                "\\.editorconfig$"
                "\\.meta$"
-               "^\\.env\\([-.][0-9a-z]+\\)?$" ; ".env" or ".env.local"
+               "^\\.env\\([-.0-9a-z]+\\)?$" ; ".env" or ".env.local"
                "PKGBUILD$" ; archlinux
+               "\\.pgpass$"
                "\\.?muttrc$"
                "\\.mailcap$")
 ;; }}
@@ -45,6 +46,7 @@
 
 (my-add-auto-mode 'text-mode
                "TAGS\\'"
+               "\\.pyim\\'"
                "\\.ctags\\'")
 
 (my-add-auto-mode 'java-mode
@@ -89,12 +91,9 @@
 
 (my-add-auto-mode 'octave-mode "\\.m$")
 
-;; pyim
-(my-add-auto-mode 'text-mode "\\.pyim\\'")
-
 ;; {{ web/html
 (my-add-auto-mode 'web-mode
-               "\\.\\(cmp\\|app\\|page\\|component\\|wp\\|vue\\|tmpl\\|php\\|module\\|inc\\|hbs\\|tpl\\|[gj]sp\\|as[cp]x\\|erb\\|mustache\\|djhtml\\|ftl\\|[rp]?html?\\|xul?\\|eex?\\|xml?\\|jst\\|ejs\\|erb\\|rbxlx\\)$")
+               "\\.\\(cmp\\|app\\|page\\|component\\|wp\\|vue\\|tmpl\\|php\\|module\\|inc\\|hbs\\|tpl\\|[gj]sp\\|as[cp]x\\|erb\\|mustache\\|djhtml\\|ftl\\|[rp]?html?\\|xul?\\|eex?\\|xml?\\|jst\\|ejs\\|erb\\|rbxlx\\|plist\\)$")
 ;; }}
 
 ;; {{js
@@ -137,6 +136,5 @@
 ;; `css-mode' has better imenu support and won't force flymake to create rubbish files.
 ;; besides, scss/sass is outdated. We use postcss or css in js these days.
 (my-add-auto-mode 'css-mode "\\.scss$")
-
 
 (provide 'init-file-type)

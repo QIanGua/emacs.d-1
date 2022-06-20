@@ -88,8 +88,10 @@ If no files marked, always operate on current line in dired-mode."
                                                             "epub"))))
 
 (defun dired-mode-hook-setup ()
-  "Set up dired."
+  "Set up Dired."
   (dired-hide-details-mode 1)
+  (diredfl-mode)
+  (unless dired-subdir-alist (dired-build-subdir-alist))
   (local-set-key  "r" 'dired-up-directory)
   (local-set-key  "e" 'my-ediff-files)
   (local-set-key  "/" 'dired-isearch-filenames)
@@ -122,11 +124,13 @@ If no files marked, always operate on current line in dired-mode."
 If N is not nil, only list directories in current project."
   (interactive "P")
   (unless recentf-mode (recentf-mode 1))
-  (let* ((cands (delete-dups
-                 (append my-dired-directory-history
-                         (mapcar 'file-name-directory recentf-list)
-                         (and my-shell-directory-history-function
-                              (funcall my-shell-directory-history-function)))))
+  (let* ((cands (cl-remove-if-not
+                 #'file-exists-p
+                 (delete-dups
+                  (append my-dired-directory-history
+                          (mapcar 'file-name-directory recentf-list)
+                          (and my-shell-directory-history-function
+                               (funcall my-shell-directory-history-function))))))
          (root-dir (if (ffip-project-root) (file-truename (ffip-project-root)))))
 
     (when (and n root-dir)
@@ -195,6 +199,7 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
        ((and search-in-dir
              (file-exists-p subtitle-dir)
              (fboundp 'string-distance))
+        (my-ensure 'find-lisp)
         (let* ((files (find-lisp-find-files-internal subtitle-dir
                                                      (lambda (file dir)
                                                        (and (not (file-directory-p (expand-file-name file dir)))
@@ -221,7 +226,7 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
     "Detect subtitles for mplayer."
     (let* ((rlt (apply orig-func args)))
       (when (and (stringp rlt)
-                 (string-match-p "^mplayer .*-quiet" rlt))
+                 (string-match "^mplayer .*-quiet" rlt))
         ;; append subtitle to mplayer cli
         (setq rlt
               (format "%s %s"
@@ -242,15 +247,21 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
     (let* ((file (dired-get-file-for-visit)))
       (cond
        ((my-binary-file-p file)
-        ;; confirm before opening big file
-        (when (yes-or-no-p "Edit binary file?")
-          (apply orig-func args)))
+        ;; play media file instead of editing it
+        (call-interactively 'dired-do-async-shell-command))
+
        (t
         (when (and (file-directory-p file)
                    ;; don't add directory when user pressing "^" in `dired-mode'
-                   (not (string-match-p "\\.\\." file)))
+                   (not (string-match "\\.\\." file)))
           (unless (and my-dired-exclude-directory-regexp
                        (string-match my-dired-exclude-directory-regexp file))
+            ;; clean up old items in `my-dired-directory-history'
+            ;; before adding new item
+            (setq my-dired-directory-history
+                  (cl-remove-if-not #'file-exists-p my-dired-directory-history))
+
+            ;; add current directory into history
             (push file my-dired-directory-history)))
         (apply orig-func args)))))
   (advice-add 'dired-find-file :around #'my-dired-find-file-hack)
@@ -261,6 +272,8 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
            (arg (nth 1 args))
            (file-list (nth 2 args))
            (first-file (file-truename (and file-list (car file-list)))))
+      (ignore command)
+      (ignore arg)
       (cond
        ((file-directory-p first-file)
         (async-shell-command (format "%s -dvd-device %s dvd://1 dvd://2 dvd://3 dvd://4 dvd://1 dvd://5 dvd://6 dvd://7 dvd://8 dvd://9"
@@ -286,4 +299,6 @@ If SEARCH-IN-DIR is t, try to find the subtitle by searching in directory."
                 "sudo pm-suspend"))))
     (shell-command cmd)))
 
+(defun my-dired-save-current-buffer ()
+  (interactive))
 (provide 'init-dired)

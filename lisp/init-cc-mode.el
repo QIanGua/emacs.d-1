@@ -18,11 +18,6 @@
   ;; give me NO newline automatically after electric expressions are entered
   (setq c-auto-newline nil)
 
-  ;; syntax-highlight aggressively
-  ;; (setq font-lock-support-mode 'lazy-lock-mode)
-  (setq lazy-lock-defer-contextually t)
-  (setq lazy-lock-defer-time 0)
-
   ;make DEL take all previous whitespace with it
   (c-toggle-hungry-state 1))
 
@@ -45,7 +40,7 @@
 
 (defun c-mode-common-hook-setup ()
   "C/C++ setup."
-  (unless (is-buffer-file-temp)
+  (unless (my-buffer-file-temp-p)
     (my-common-cc-mode-setup)
     (unless (or (derived-mode-p 'java-mode) (derived-mode-p 'groovy-mode))
       (my-c-mode-setup))))

@@ -4,6 +4,7 @@
 
 ;; Without this comment emacs25 adds (package-initialize) here
 ;; (package-initialize)
+
 (let* ((minver "26.1"))
   (when (version< emacs-version minver)
     (error "Emacs v%s or higher is required" minver)))
@@ -19,6 +20,7 @@
 (setq *linux* (or (eq system-type 'gnu/linux) (eq system-type 'linux)) )
 (setq *unix* (or *linux* (eq system-type 'usg-unix-v) (eq system-type 'berkeley-unix)) )
 (setq *emacs27* (>= emacs-major-version 27))
+(setq *emacs28* (>= emacs-major-version 28))
 
 ;; don't GC during startup to save time
 (unless (bound-and-true-p my-computer-has-smaller-memory-p)
@@ -109,17 +111,20 @@
   (require-init 'init-gtags t)
   (require-init 'init-clipboard)
   (require-init 'init-ctags t)
-  ;; (require-init 'init-bbdb t)
   ;; (require-init 'init-gnus t)
   ;; (require-init 'init-lua-mode t)
-  (require-init 'init-workgroups2 t)    ; use native API in lightweight mode
+  (require-init 'init-gnus t)
+  (require-init 'init-lua-mode t)
   (require-init 'init-term-mode)
   ;; (require-init 'init-web-mode t)
+  (require-init 'init-web-mode t)
   (require-init 'init-company t)
   ;; (require-init 'init-chinese t) ;; cannot be idle-required
+  (require-init 'init-chinese t) ;; cannot be idle-required
   ;; need statistics of keyfreq asap
   (require-init 'init-keyfreq t)
   ;; (require-init 'init-httpd t)
+  (require-init 'init-httpd t)
 
   ;; projectile costs 7% startup time
 
@@ -127,22 +132,27 @@
   ;; color themes are already installed in `init-elpa.el'
   (require-init 'init-theme)
 
-  ;; misc has some crucial tools I need immediately
+  ;; crucial tools
   (require-init 'init-essential)
-  ;; handy tools though not must have
+  ;; tools nice to have
   (require-init 'init-misc t)
 
   ;; (require-init 'init-emacs-w3m t)
   ;; (require-init 'init-shackle t)
+  (require-init 'init-emacs-w3m t)
+  (require-init 'init-shackle t)
   (require-init 'init-dired t)
   (require-init 'init-writting t)
   (require-init 'init-hydra)            ; hotkey is required everywhere
+  (require-init 'init-hydra) ; hotkey is required everywhere
   ;; use evil mode (vi key binding)
   (require-init 'init-evil)             ; init-evil dependent on init-clipboard
+  (require-init 'init-evil) ; init-evil dependent on init-clipboard
 
   ;; ediff configuration should be last so it can override
   ;; the key bindings in previous configuration
-  (require-init 'init-ediff)
+  (when my-lightweight-mode-p
+    (require-init 'init-ediff))
 
   ;; @see https://github.com/hlissner/doom-emacs/wiki/FAQ
   ;; Adding directories under "site-lisp/" to `load-path' slows
@@ -151,7 +161,7 @@
   (unless my-disable-idle-timer
     (my-add-subdirs-to-load-path (file-name-as-directory my-site-lisp-dir)))
 
-  (require-init 'init-flymake t)
+  (require-init 'init-no-byte-compile t)
   (unless my-lightweight-mode-p
     ;; @see https://www.reddit.com/r/emacs/comments/4q4ixw/how_to_forbid_emacs_to_touch_configuration_files/
     ;; See `custom-file' for details.
@@ -174,7 +184,6 @@
 ;;   (garbage-collect))
 
 ;; (run-with-idle-timer 4 nil #'my-cleanup-gc)
-
 ;; (custom-set-variables
 ;;  ;; custom-set-variables was added by Custom.
 ;;  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -184,13 +193,7 @@
 ;;    '("37768a79b479684b0756dec7c0fc7652082910c37d8863c35b702db3f16000f8" default))
 ;;  '(session-use-package t nil (session)))
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:background nil)))))
- ;;; Local Variables:
+;;; Local Variables:
 ;;; no-byte-compile: t
 ;;; End:
 (put 'erase-buffer 'disabled nil)

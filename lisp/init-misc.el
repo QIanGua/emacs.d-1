@@ -33,7 +33,7 @@
 
 (setq-default buffers-menu-max-size 30
               case-fold-search t
-              compilation-scroll-output t
+              compilation-scroll-output 'first-error
               ediff-split-window-function 'split-window-horizontally
               ediff-window-setup-function 'ediff-setup-windows-plain
               grep-highlight-matches t
@@ -58,7 +58,7 @@
 (with-eval-after-load 'find-file-in-project
   (defun my-search-git-reflog-code ()
     (let* ((default-directory (my-git-root-dir)))
-      (ffip-shell-command-to-string (format "git --no-pager reflog --date=short -S\"%s\" -p"
+      (shell-command-to-string (format "git --no-pager reflog --date=short -S\"%s\" -p"
                                             (read-string "Regex: ")))))
   (push 'my-search-git-reflog-code ffip-diff-backends)
   (setq ffip-match-path-instead-of-filename t))
@@ -88,8 +88,9 @@
 ;; {{ bookmark
 ;; use my own bookmark if it exists
 (with-eval-after-load 'bookmark
-  (if (file-exists-p (file-truename "~/.emacs.bmk"))
-      (setq bookmark-file (file-truename "~/.emacs.bmk"))))
+  (let ((file "~/.emacs.bmk"))
+    (when (file-exists-p file)
+      (setq bookmark-default-file file))))
 ;; }}
 
 (defun my-lookup-doc-in-man ()
@@ -99,10 +100,10 @@
 
 ;; @see http://blog.binchen.org/posts/effective-code-navigation-for-web-development.html
 ;; don't let the cursor go into minibuffer prompt
-(setq minibuffer-prompt-properties (quote (read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)))
+(setq minibuffer-prompt-properties
+      (quote (read-only t point-entered minibuffer-avoid-prompt face minibuffer-prompt)))
 
 (global-set-key (kbd "M-x") 'counsel-M-x)
-(global-set-key (kbd "C-x C-m") 'counsel-M-x)
 
 ;; hide the compilation buffer automatically is not a good idea.
 ;; if compiling command is a unit test command
@@ -110,20 +111,23 @@
 (defvar my-do-bury-compilation-buffer nil
   "Hide compilation buffer if compile successfully.")
 
-(defun compilation-finish-hide-buffer-on-success (buffer str)
+(defun my-compilation-finish-hide-buffer-on-success (buffer str)
   "Bury BUFFER whose name marches STR.
 This function can be re-used by other major modes after compilation."
-  (if (string-match "exited abnormally" str)
-      ;;there were errors
-      (message "compilation errors, press C-x ` to visit")
-    ;;no errors, make the compilation window go away in 0.5 seconds
+  (cond
+   ;;there were errors
+   ((string-match "exited abnormally" str)
+    (message "There IS compilation errors, press C-x ` to visit!"))
+
+   ;;no errors, make the compilation window go away in 0.5 seconds
+   (t
     (when (and my-do-bury-compilation-buffer
                (buffer-name buffer)
                (string-match "*compilation*" (buffer-name buffer)))
       ;; @see http://emacswiki.org/emacs/ModeCompile#toc2
       (bury-buffer "*compilation*")
       (winner-undo)
-      (message "NO COMPILATION ERRORS!"))))
+      (message "NO compilation error.")))))
 
 ;; {{ electric pair
 (defun my-normal-word-before-point-p (position n fn)
@@ -170,13 +174,10 @@ FN checks these characters belong to normal word characters."
   (setq electric-pair-inhibit-predicate 'my-electric-pair-inhibit))
 ;; }}
 
-(with-eval-after-load 'flymake
-  (setq flymake-gui-warnings-enabled nil))
-
 (defvar my-disable-lazyflymake nil
   "Disable lazyflymake.")
 
-(defun generic-prog-mode-hook-setup ()
+(defun my-generic-prog-mode-hook-setup ()
   "Generic programming mode set up."
   (when (buffer-too-big-p)
     ;; Turn off `linum-mode' when there are more than 5000 lines
@@ -186,14 +187,18 @@ FN checks these characters belong to normal word characters."
 
   (my-company-ispell-setup)
 
-  (unless (is-buffer-file-temp)
+  (unless (my-buffer-file-temp-p)
     ;;  trim spaces from end of changed line
     (ws-butler-mode 1)
 
     (unless (featurep 'esup-child)
-      (unless my-disable-lazyflymake
+      (cond
+       ((and (not my-disable-lazyflymake) *emacs27*)
+        ;; lazyflymake v0.5 requires emacs27
         (my-ensure 'lazyflymake)
         (lazyflymake-start))
+       (t
+        (flymake-mode 1)))
 
       (unless my-disable-wucuo
         (my-ensure 'wucuo)
@@ -202,7 +207,7 @@ FN checks these characters belong to normal word characters."
 
     ;; @see http://xugx2007.blogspot.com.au/2007/06/benjamin-rutts-emacs-c-development-tips.html
     (setq compilation-finish-functions
-          '(compilation-finish-hide-buffer-on-success))
+          '(my-compilation-finish-hide-buffer-on-success))
 
     ;; fic-mode has performance issue on 5000 line C++, use swiper instead
 
@@ -234,13 +239,13 @@ FN checks these characters belong to normal word characters."
     ;; show trailing spaces in a programming mod
     (setq show-trailing-whitespace t)))
 
-(add-hook 'prog-mode-hook 'generic-prog-mode-hook-setup)
+(add-hook 'prog-mode-hook 'my-generic-prog-mode-hook-setup)
+(add-hook 'text-mode-hook #'lazyflymake-start)
 
 ;;; {{ display long lines in truncated style (end line with $)
-(defun truncate-lines-setup ()
+(defun my-truncate-lines-setup ()
   (toggle-truncate-lines 1))
-(add-hook 'grep-mode-hook 'truncate-lines-setup)
-;; (add-hook 'org-mode-hook 'truncate-lines-setup)
+(add-hook 'grep-mode-hook 'my-truncate-lines-setup)
 ;; }}
 
 ;; turn on auto-fill-mode, don't use `text-mode-hook' because for some
@@ -273,11 +278,7 @@ FN checks these characters belong to normal word characters."
 (my-run-with-idle-timer 2 #'display-time)
 ;; }}
 
-;;a no-op function to bind to if you want to set a keystroke to null
-(defun void () "This is a no-op." (interactive))
-
 (defalias 'list-buffers 'ibuffer)
-
 
 ;; {{ show email sent by `git send-email' in gnus
 (with-eval-after-load 'gnus
@@ -286,7 +287,7 @@ FN checks these characters belong to normal word characters."
         '( "^@@ -[0-9]+,[0-9]+ \\+[0-9]+,[0-9]+ @@" )))
 ;; }}
 
-(defun add-pwd-into-load-path ()
+(defun my-add-pwd-into-load-path ()
   "Add current directory into `load-path', useful for elisp developers."
   (interactive)
   (let* ((dir (expand-file-name default-directory)))
@@ -365,36 +366,19 @@ FN checks these characters belong to normal word characters."
   (message (car (my-nonempty-lines (shell-command-to-string
                                  (concat "mpc "
                                          (if previous "prev" "next")))))))
-
-(defun lyrics()
-  "Prints the lyrics for the current song."
-  (interactive)
-  (let* ((song (shell-command-to-string "lyrics")))
-    (if (equal song "")
-        (message "No lyrics - Opening browser.")
-      (switch-to-buffer (create-file-buffer "Lyrics"))
-      (insert song)
-      (goto-line 0))))
-;; }}
-
-;; {{ avy, jump between texts, like easymotion in vim
-;; @see http://emacsredux.com/blog/2015/07/19/ace-jump-mode-is-dead-long-live-avy/ for more tips
-;; dired
-(with-eval-after-load 'dired
-  (diredfl-global-mode 1)
-  (define-key dired-mode-map (kbd ";") 'avy-goto-subword-1))
 ;; }}
 
 ;; {{start dictionary lookup
-;; use below commands to create dictionary
-;; mkdir -p ~/.stardict/dic
-;; # wordnet English => English
-;; curl http://abloz.com/huzheng/stardict-dic/dict.org/stardict-dictd_www.dict.org_wn-2.4.2.tar.bz2 | tar jx -C ~/.stardict/dic
-;; # Langdao Chinese => English
-;; curl http://abloz.com/huzheng/stardict-dic/zh_CN/stardict-langdao-ec-gb-2.4.2.tar.bz2 | tar jx -C ~/.stardict/dic
-;;
-(setq sdcv-dictionary-simple-list '("朗道英汉字典5.0"))
-(setq sdcv-dictionary-complete-list '("WordNet"))
+(with-eval-after-load 'sdcv
+  ;; use below commands to create dictionary
+  ;; mkdir -p ~/.stardict/dic
+  ;; # wordnet English => English
+  ;; curl http://abloz.com/huzheng/stardict-dic/dict.org/stardict-dictd_www.dict.org_wn-2.4.2.tar.bz2 | tar jx -C ~/.stardict/dic
+  ;; # Langdao Chinese => English
+  ;; curl http://abloz.com/huzheng/stardict-dic/zh_CN/stardict-langdao-ec-gb-2.4.2.tar.bz2 | tar jx -C ~/.stardict/dic
+  ;;
+  (setq sdcv-dictionary-simple-list '("朗道英汉字典5.0"))
+  (setq sdcv-dictionary-complete-list '("WordNet")))
 ;; }}
 
 ;; ANSI-escape coloring in compilation-mode
@@ -415,7 +399,7 @@ FN checks these characters belong to normal word characters."
   (setq gc-cons-threshold most-positive-fixnum))
 
 (defun my-minibuffer-exit-hook ()
-  "Hook when exist mini buffer."
+  "Hook when exiting mini buffer."
   ;; evil-mode also use mini buffer
   (setq gc-cons-threshold 67108864))
 
@@ -424,16 +408,15 @@ FN checks these characters belong to normal word characters."
 (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
 
 ;; {{ cliphist.el
-(setq cliphist-use-ivy t)
 (defun my-select-cliphist-item (num item)
   "NUM is ignored.  Paste selected clipboard ITEM into clipboard.
 So it's at the top of clipboard manager."
-  (ignore num.)
+  (ignore num)
   (my-pclip item))
 (setq cliphist-select-item-callback 'my-select-cliphist-item)
 ;; }}
 
-(defun extract-list-from-package-json ()
+(defun my-extract-list-from-package-json ()
   "Extract package list from package.json."
   (interactive)
   (let* ((str (my-use-selected-string-or-ask)))
@@ -496,7 +479,7 @@ So it's at the top of clipboard manager."
   (when (and kill-ring (> (length kill-ring) 0))
     (if (> n (length kill-ring))
         (setq n (length kill-ring)))
-    (let* ((rlt (mapconcat 'identity (subseq kill-ring 0 n) "|")))
+    (let* ((rlt (mapconcat 'identity (cl-subseq kill-ring 0 n) "|")))
       (setq rlt (replace-regexp-in-string "(" "\\\\(" rlt))
       (copy-yank-str rlt)
       (message (format "%s => kill-ring&clipboard" rlt)))))
@@ -530,10 +513,6 @@ So it's at the top of clipboard manager."
     (xterm-mouse-mode 1)))
 (add-hook 'after-make-frame-functions 'my-run-after-make-frame-hook)
 ;; }}
-
-;; flymake
-(with-eval-after-load 'flymake
-  (setq flymake-gui-warnings-enabled nil))
 
 ;; {{ check attachments
 (defun my-message-current-line-cited-p ()
@@ -591,6 +570,7 @@ So it's at the top of clipboard manager."
 (defun vc-msg-hook-setup (vcs-type commit-info)
   "Set up vc with VCS-TYPE and COMMIT-INFO."
   ;; copy commit id to clipboard
+  (ignore vcs-type)
   (my-pclip (plist-get commit-info :id)))
 (add-hook 'vc-msg-hook 'vc-msg-hook-setup)
 
@@ -724,13 +704,22 @@ If the shell is already opened in some buffer, switch to that buffer."
 
 ;; {{ emms
 (with-eval-after-load 'emms
-  (emms-all)
-  (setq emms-player-list '(emms-player-mplayer-playlist
-                           emms-player-mplayer
-                           emms-player-mpg321
-                           emms-player-ogg123
-                           emms-player-vlc
-                           emms-player-vlc-playlist)))
+  ;; minimum setup is more robust
+  (emms-minimalistic)
+  ;; only show file track's base name
+  (setq emms-track-description-function
+        (lambda (track)
+          (let ((desc (emms-track-simple-description track))
+                (type (emms-track-type track)))
+            (when (eq 'file type)
+              (setq desc (my-strip-path desc 2)))
+            desc)))
+
+  (setq emms-source-file-exclude-regexp
+        (concat "\\`\\(#.*#\\|.*,v\\|.*~\\|\\.\\.?\\|\\.#.*\\|,.*\\)\\'\\|"
+                "/\\(CVS\\|RCS\\|\\.dropbox.attr\\|\\.git\\|,.*\\|\\.svn\\)\\(/\\|\\'\\)"))
+  (setq emms-player-list '(emms-player-mplayer
+                           emms-player-vlc)))
 ;; }}
 
 (transient-mark-mode t)
@@ -743,8 +732,7 @@ If the shell is already opened in some buffer, switch to that buffer."
   ;; Although win64 is fine. It still slows down generic performance.
   ;; @see https://stackoverflow.com/questions/3589535/why-reload-notification-slow-in-emacs-when-files-are-modified-externally
   ;; So no auto-revert-mode on Windows/Cygwin
-  (setq global-auto-revert-non-file-buffers t
-        auto-revert-verbose nil)
+  (setq auto-revert-verbose nil)
   (my-run-with-idle-timer 4 #'global-auto-revert-mode))
 
 ;;----------------------------------------------------------------------------
@@ -782,7 +770,7 @@ If the shell is already opened in some buffer, switch to that buffer."
     (while (< i 254)
       (setq i (+ i 1))
       (insert (format "%4d %c\n" i i))))
-  (beginning-of-buffer))
+  (goto-char (point-min)))
 
 ;; {{ unique lines
 ;; https://gist.github.com/ramn/796527
@@ -805,7 +793,8 @@ Then insert it as a local file link in `org-mode'."
 If ARG is not nil, copy full path.
 Press \"w\" to copy file name.
 Press \"C-u 0 w\" to copy full path."
-  (let* ((str (current-kill 0)))
+  (ignore arg)
+  (let ((str (current-kill 0)))
     (my-pclip str)
     (message "%s => clipboard" str)))
 (advice-add 'dired-copy-filename-as-kill :after #'my-dired-copy-filename-as-kill-hack)
@@ -889,7 +878,7 @@ might be bad."
       (setenv "GPG_AGENT_INFO" agent)))
   (advice-add 'epg--start :around #'my-epg--start-hack)
 
-  (unless (string-match-p "^gpg (GnuPG) 1.4"
+  (unless (string-match "^gpg (GnuPG) 1.4"
                           (shell-command-to-string (format "%s --version" epg-gpg-program)))
 
     ;; "apt-get install pinentry-tty" if using emacs-nox
@@ -952,11 +941,11 @@ might be bad."
   (cond
    ((or (not buffer-file-name)
         (not (file-exists-p buffer-file-name))
-        (not (string-match-p "html?$" buffer-file-name)))
+        (not (string-match "html?$" buffer-file-name)))
     (let* ((file (make-temp-file "my-browse-file-" nil ".html")))
       (my-write-to-file (format "<html><body>%s</body></html>" (buffer-string)) file)
       (my-browse-file file)
-      (my-run-with-idle-timer 4 (lambda (delete-file file)))))
+      (my-run-with-idle-timer 4 (lambda () (delete-file file)))))
    (t
     (my-browse-file buffer-file-name))))
 
@@ -989,7 +978,7 @@ might be bad."
       (let* ((i 0) found cand)
         (while (and (setq cand (nth i my-default-yes-no-answers))
                     (not found))
-          (when (string-match-p (cdr cand) prompt)
+          (when (string-match (cdr cand) prompt)
             (setq found t)
             (setq rlt (car cand)))
           (setq i (1+ i)))
@@ -1007,8 +996,8 @@ might be bad."
   (setq eldoc-echo-area-use-multiline-p t))
 ;;}}
 
-(defvar my-sdcv-org-head-level 2)
 ;; {{ use sdcv dictionary to find big word definition
+(defvar my-sdcv-org-head-level 2)
 (defun my-sdcv-format-bigword (word zipf)
   "Format WORD and ZIPF using sdcv dictionary."
   (let* (rlt def)
@@ -1016,7 +1005,7 @@ might be bad."
     ;; 2 level org format
     (condition-case nil
         (progn
-          (setq def (sdcv-search-witch-dictionary word sdcv-dictionary-complete-list))
+          (setq def (sdcv-search-with-dictionary word sdcv-dictionary-complete-list) )
           (setq def (replace-regexp-in-string "^-->.*" "" def))
           (setq def (replace-regexp-in-string "[\n\r][\n\r]+" "" def))
           (setq rlt (format "%s %s (%s)\n%s\n"
@@ -1027,7 +1016,7 @@ might be bad."
       (error nil))
     rlt))
 
-(defun my-lookup-big-word-definition-in-buffer ()
+(defun my-lookup-bigword-definition-in-buffer ()
   "Look up big word definitions."
   (interactive)
   (local-require 'mybigword)
@@ -1077,7 +1066,6 @@ might be bad."
   (let* ((link (completing-read "Open pdf:::page: " my-pdf-view-from-history)))
     (when link
       (let* ((items (split-string link ":::"))
-             (pdf-file (nth 0 items))
              (pdf-page (string-to-number (nth 1 items))))
         (my-ensure 'org)
         (my-focus-on-pdf-window-then-back
@@ -1090,6 +1078,7 @@ might be bad."
   (interactive "p")
   (my-focus-on-pdf-window-then-back
    (lambda (pdf-file)
+     (ignore pdf-file)
      (pdf-view-scroll-up-or-next-page n))))
 
 (defun my-open-pdf-scroll-or-previous-page (&optional n)
@@ -1097,6 +1086,7 @@ might be bad."
   (interactive "p")
   (my-focus-on-pdf-window-then-back
    (lambda (pdf-file)
+     (ignore pdf-file)
      (pdf-view-scroll-down-or-previous-page n))))
 
 (defun my-open-pdf-next-page (&optional n)
@@ -1104,6 +1094,7 @@ might be bad."
   (interactive "p")
   (my-focus-on-pdf-window-then-back
    (lambda (pdf-file)
+     (ignore pdf-file)
      (pdf-view-next-page n))))
 
 (defun my-open-pdf-previous-page (&optional n)
@@ -1111,6 +1102,7 @@ might be bad."
   (interactive "p")
   (my-focus-on-pdf-window-then-back
    (lambda (pdf-file)
+     (ignore pdf-file)
      (pdf-view-previous-page n))))
 
 (defun my-open-pdf-goto-page (&optional n)
@@ -1123,6 +1115,7 @@ Org node property PDF_PAGE_OFFSET is used to calculate physical page number."
     (setq n (+ n page-offset))
     (my-focus-on-pdf-window-then-back
      (lambda (pdf-file)
+       (ignore pdf-file)
        (pdf-view-goto-page n)))))
 
 (defun my-navigate-in-pdf ()
@@ -1200,7 +1193,7 @@ It's also controlled by `my-lazy-before-save-timer'."
           (emms-add-directory-tree item)
           (setq found t))
 
-         ((string-match-p regexp item)
+         ((string-match regexp item)
           ;; add media file to the playlist
           (emms-add-file item)
           (setq found t))))
@@ -1245,6 +1238,79 @@ It's also controlled by `my-lazy-before-save-timer'."
 (with-eval-after-load 'yaml-mode
   (setq yaml-imenu-generic-expression
         '((nil  "^\\(:?[0-9a-zA-Z_-]+\\):" 1))))
+
+;; {{ calendar setup
+(with-eval-after-load 'calendar
+  ;; show holiday marker in calendar
+  (setq calendar-mark-holidays-flag t)
+  ; show current month's holiday in different window
+  (setq calendar-view-holidays-initially-flag t))
+
+(defvar holiday-nsw-holidays
+  (mapcar 'purecopy
+  '((holiday-fixed  1 26 "NSW: New Year's Day")
+    (holiday-fixed  1 26 "NSW: Australia Day")
+    (holiday-fixed  4 25 "NSW: ANZAC Day")
+    ;; second Monday on June, don't know why the month
+    ;; is zero based in `holiday-float'
+    (holiday-float  5 1 7 "NSW: Queen's Birthday")
+    (holiday-float 9 1 0 "NSW: Labour Day")
+    (holiday-fixed 12 25 "NSW: Christmas Day")
+    (holiday-fixed 12 26 "NSW: Boxing Day")))
+    "NSW public holidays.")
+
+(defun my-china-calendar (&optional arg)
+  "Open Chinese Lunar calendar with ARG."
+  (interactive "P")
+  (unless (featurep 'cal-china-x) (local-require 'cal-china-x))
+  (let* ((cal-china-x-important-holidays cal-china-x-chinese-holidays)
+         (cal-china-x-general-holidays '((holiday-lunar 1 15 "元宵节")
+                                         (holiday-fixed 6 1 "儿童节")
+                                         (holiday-lunar 7 7 "七夕节")
+                                         (holiday-lunar 9 9 "重阳节")
+                                         (holiday-lunar 12 8 "腊八节")))
+         (calendar-holidays (append holiday-local-holidays
+                                    cal-china-x-important-holidays
+                                    cal-china-x-general-holidays)))
+    (calendar arg)))
+;; }}
+
+(defun my-srt-my-player-play-video-at-point ()
+  "In srt file, play video from current time stamp.
+Emacs 27 is required."
+  (interactive)
+  (my-ensure 'mybigword)
+  (my-ensure 'find-lisp)
+  (let* ((str (thing-at-point 'paragraph))
+         (regexp  "^\\([0-9]+:[0-9]+:[0-9]+\\),[0-9]+ +-->")
+         (start-time (and (string-match regexp str)
+                          (match-string 1 str)))
+         (videos (find-lisp-find-files-internal
+                 "."
+                 (lambda (file dir)
+                   (and (not (file-directory-p (expand-file-name file dir)))
+                        (member (file-name-extension file)
+                                my-media-file-extensions)))
+                 (lambda (dir parent)
+                   (ignore parent)
+                   (not (member dir '("." ".." ".git" "sub" "Sub"))))))
+         (srt-base-name (file-name-base buffer-file-name)))
+
+    (when srt-base-name
+      (setq videos (sort videos `(lambda (a b) (< (string-distance a ,srt-base-name)
+                                   (string-distance b ,srt-base-name))))))
+    (when (and (> (length videos) 0) start-time)
+      ;; plays the matched video
+      (mybigword-run-mplayer start-time (car videos)))))
+
+(defvar my-org-agenda-files '("~/blog/")
+  "My org agenda files.")
+(defun my-org-tags-view ()
+  "Show all headlines for org files matching a TAGS criterion."
+  (interactive)
+  (let* ((org-agenda-files my-org-agenda-files)
+         (org-tags-match-list-sublevels nil))
+    (call-interactively 'org-tags-view)))
 
 (provide 'init-misc)
 ;;; init-misc.el ends here
