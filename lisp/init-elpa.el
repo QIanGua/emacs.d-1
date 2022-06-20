@@ -286,7 +286,7 @@ If NO-REFRESH is nil, `package-refresh-contents' is called."
 (require-package 'rainbow-delimiters)
 (require-package 'textile-mode)
 (require-package 'git-timemachine)
-(require-package 'exec-path-from-shell)
+;; (require-package 'exec-path-from-shell)
 (require-package 'ivy)
 (require-package 'swiper)
 (require-package 'counsel) ; counsel => swiper => ivy
